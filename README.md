@@ -65,15 +65,6 @@ To get a local copy and run the dashboard for local testing/development follow t
       ```sh
       python front-end-dashboard\app.py
       ```
-   
-
-
-### Usage
-
-1. Run docker-compose file to start local  MongoDB 
-   ```sh
-   docker-compose up -d;
-   ```
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 

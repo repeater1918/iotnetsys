@@ -1,9 +1,14 @@
 
 <a name="readme-top"></a>
 
+## Overview
+
+<div align='center'>
+<img src="stack.png" width="750" height="450"><br/>
+</div>
+
 <!-- GETTING STARTED -->
 ## Getting Started
-
 To get a local copy and run the dashboard for local testing/development follow these steps
 
 ### Installation

@@ -24,7 +24,7 @@ import psutil
 from dotenv import load_dotenv
 from pymongo import MongoClient
 
-dotenv_path = Path(".envs/mongodb.env")
+dotenv_path = Path(Path(__file__).parent.resolve(), "../.envs/mongodb.env")
 load_dotenv(dotenv_path=dotenv_path)
 
 MONGO_ATLAS_URI = f"mongodb+srv://{os.getenv('MONGO_USR')}:{os.getenv('MONGO_PWD')}@{os.getenv('MONGO_CLSTR')}"

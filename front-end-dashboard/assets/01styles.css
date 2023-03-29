@@ -1,0 +1,22 @@
+.page-container {
+    padding: 1rem !important;
+}
+
+.navbar .navbar-brand {
+    /* color: orange; */
+    font-size: 1.55rem;
+}
+
+.icon {
+    font-size: 2.2rem;
+    color: orange;
+}
+
+.dropdown-menu.show  {
+    left: -100px;
+}
+
+
+a {
+    text-decoration: none;
+}

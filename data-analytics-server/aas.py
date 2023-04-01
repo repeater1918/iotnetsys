@@ -25,7 +25,7 @@ from typing import Dict, List
 import requests
 from database.mongodb import Database
 from fastapi import FastAPI
-from models import MetaStream, PacketStream, calculate_pdr_metrics, calculate_icmp_metrics
+from models import MetaStream, PacketStream, calculate_pdr_metrics, calculate_icmp_metrics, calculate_parent_change_metrics
 
 FRONT_END_URL = "http://127.0.0.1:8050/data-update"
 
@@ -86,17 +86,24 @@ def packet_metric_scheduler():
 
         # This dataframe represents all historical packets
         df_all_packets = packet_stream.flush_stream().copy(deep=True)
+        df_all_packets.to_csv(path_or_buf='packetdata.csv', sep='|', index = False)
 
         """ ########### Place calcs below here ########### """
 
         # Step 1 - using all historical packets (df_all_packets) - calculate your metrics and return a dataframe
         pdr_metric = calculate_pdr_metrics(df_all_packets, timeframe=60000, bins=10)
+        pc_metric_network_int = calculate_parent_change_metrics(df_all_packets, timeframe=60000, bins=10)
+
         # Step 2 - when you have the result convert your dataframe to a dictionary so it can be sent as json
-        metric_dict = pdr_metric.to_dict("records")
+        pdr_metric_dict = pdr_metric.to_dict("records")
+
         # Step 3 - add a label to your data so when it reaches the front end we know who it belongs to
-        data = {"data": metric_dict, "owner": "pdr_metric"}
+        pdr_data = {"data": pdr_metric_dict, "owner": "pdr_metric"}
+        pc_network_data = {"data": pc_metric_network_int, "owner":"pc_metric_network"}
+
         # Step 4 - pass your dictionary data into the on_packet_data_update to send it to the front-end
-        send_data_to_front_end(data)
+        send_data_to_front_end(pdr_data)
+        send_data_to_front_end(pc_network_data)
 
         """ ########### Place calcs above here ########### """
 

@@ -34,8 +34,8 @@ from flask import request
 from components.navigation import navbar, main_page_heading, nav_drawer
 
 # declare global variables that will be updated by AAS
-global df_pdr, df_icmp
-df_pdr = df_icmp = None
+global df_pdr, df_icmp, df_pc_network
+df_pdr = df_icmp = df_pc_network = None
 
 dbt.load_figure_template("DARKLY")
 
@@ -119,6 +119,11 @@ def req():
         # Get the x and y data that the figure refers to
         global df_icmp
         df_icmp = data
+
+    if owner == "pc_network_metric":
+        # Get the x and y data that the figure refers to
+        global df_pc_network
+        df_pc_network = data
 
     """  #####  """
 

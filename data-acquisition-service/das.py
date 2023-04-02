@@ -1,4 +1,3 @@
-
 """
 DAS
 
@@ -14,25 +13,27 @@ TODO:
 4. How will we store IOT data - as sessions (each unique time a script is started so Omid can refer back to a prior reading)
 
 """
-
-import os
-import subprocess
-import time
 from pathlib import Path
 
-import psutil
 from dotenv import load_dotenv
-from pymongo import MongoClient
 
 dotenv_path = Path(Path(__file__).parent.resolve(), "../.envs/mongodb.env")
 load_dotenv(dotenv_path=dotenv_path)
 
-MONGO_ATLAS_URI = f"mongodb+srv://{os.getenv('MONGO_USR')}:{os.getenv('MONGO_PWD')}@{os.getenv('MONGO_CLSTR')}"
+import os
+import subprocess
+import time
+from datetime import datetime
 
-# Connect to mongo instance and define starting db = iotnetsys - and table = netsys-live
-client = MongoClient(MONGO_ATLAS_URI)
-db = client["iotnetsys"]
-collection = db["netsys-live"]
+import psutil
+from database.mongodb import Database
+from models import MetaLog, PacketLog, parse_incoming
+
+dotenv_path = Path(Path(__file__).parent.resolve(), "../.envs/mongodb.env")
+load_dotenv(dotenv_path=dotenv_path)
+
+# Connect to local mongo instance and define starting db = iotnetsys
+client = Database(database_name="iotnetsys")
 
 # Instruct python to run Omid's script and pipe the results to this program
 target_script = (
@@ -48,6 +49,7 @@ proc = subprocess.Popen(
 )
 
 PID = proc.pid
+START_TIMESTAMP = datetime.utcnow()
 
 
 def get_proc_status(pid):
@@ -63,20 +65,26 @@ def get_proc_status(pid):
         return proc_status
 
 
-while True:
-    time.sleep(
-        5
-    )  # HACK - delays input response by 1 second for readability
+while not proc.poll():
+    time.sleep(1)  # FIXME - delays input response by 1 second for readability
+
     # read terminal input
     response = proc.stdout.readline().decode()
 
     if response:
         # Send data to MongoDB
-        data = {"data": response}
-        _id = collection.insert_one(data).inserted_id
-        print(
-            f"saved to MongoDB: {_id} - response= {response} - {get_proc_status(PID)}"
+        data = {"data": response}["data"]
+        # Delegate object identification to models / inheritance
+        log = parse_incoming(data, START_TIMESTAMP)
+        # if packet log collection = 'packetlogs' else 'metalogs' -> send to mongoDB
+        collection = (
+            client.get_collection("metalogs")
+            if isinstance(log, MetaLog)
+            else client.get_collection("packetlogs")
         )
+        _id = collection.insert_one(log.to_dict()).inserted_id
+
+        print(_id, log)
 
     elif response == "":
         # Sad path or closure

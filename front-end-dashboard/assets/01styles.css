@@ -1,0 +1,97 @@
+html, body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+  }
+
+  .wrapper {
+    display: flex;
+    flex-direction: row;
+    height: 100% ;
+    min-height: 100vh;
+  }
+  
+  .fixed-width {
+    width: 240px;
+    height: auto ;
+    padding: 16px 8px;
+    background-color: #444;
+  }
+  
+  .remaining-width {
+    flex: 1;
+    height: 100%;
+    /* background-color: #444; */
+    margin: 0px 16px 16px 16px;
+    padding: 16px 0px;
+  }
+
+.navbar .navbar-brand {
+    /* color: orange; */
+    font-size: 1.55rem;
+}
+
+.icon {
+    font-size: 2.2rem;
+    color: orange;
+}
+
+.dropdown-menu.show  {
+    left: -100px;
+}
+
+.list-group-item.typology-lvl1 {
+    font-size: 1.05rem;
+    color: orange;
+    font-weight: bold;
+}
+
+.typology-lvl2 {
+    padding-left: 24px;
+}
+
+.typology-lvl3 {
+    padding-left: 32px;
+}
+
+.typology-lvl4 {
+    padding-left: 40px;
+}
+
+.timeframe-menu {
+    margin-top: 32px;
+    color: orange;
+    font-weight: bold ;
+}
+
+.form-select {
+    background: #303030;
+    color: white;
+}
+
+.page-heading {
+    margin: 1px 0px;
+    padding: 9px 32px;
+    font-size: 1.1rem;
+    font-weight: bold;
+    color: orange;
+    background-color: #303030;
+    border-radius: 8px;
+    min-height: 40px;
+}
+
+.graph-title {
+    text-align: center;
+    color: orange;
+    font-weight: bold ;
+    min-height: 32px;
+    line-height: 32px;
+    background-color: #303030;
+    border-radius: 4px;
+}
+
+
+
+a {
+    text-decoration: none;
+}

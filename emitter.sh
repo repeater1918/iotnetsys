@@ -1,6 +1,6 @@
 #!/bin/bash
 
-filename="cooja.testlog"
+filename="cooja_packets.testlog"
 
 while read line; do
   echo "$line"

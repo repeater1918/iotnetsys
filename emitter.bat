@@ -2,7 +2,7 @@
 
 setlocal EnableDelayedExpansion
 
-set "filename=cooja.testlog"
+set "filename=cooja_packets.testlog"
 
 for /f "delims=" %%i in (%filename%) do (
   echo %%i

@@ -19,6 +19,8 @@ graph_icmp_metric = dcc.Graph(id="graph-icmp", figure=px.bar(title="ICMP Packets
 graph_received_metric = dcc.Graph(id="graph-received", figure=px.line(title="Number of received packets"))
 graph_queue_loss = dcc.Graph(id="graph-queueloss", figure=px.bar(title="Queue loss"))
 graph_duty_cycle = dcc.Graph(id="graph_duty_cycle")
+graph_e2e_metric = dcc.Graph(id="graph-e2e", figure=px.bar(title="Average End to End Delay"))
+graph_deadloss_metric = dcc.Graph(id="graph-deadloss", figure=px.bar(title="Deadline Loss Percentage"))
 
 layout = html.Div(
     children=[
@@ -28,10 +30,10 @@ layout = html.Div(
         ),
         dbc.Row(
             [
-                dbc.Col(graph_pdr_metric, md=6, style={"margin-top": "16px"}),
-                dbc.Col(graph_icmp_metric, md=6, style={"margin-top": "16px"}),
                 dbc.Col(graph_received_metric, md=6, style={"margin-top": "16px"}),
                 dbc.Col(graph_queue_loss, md=6, style={"margin-top": "16px"}),
+                dbc.Col(graph_e2e_metric, md=6, style={"margin-top": "16px"}),
+                dbc.Col(graph_deadloss_metric, md=6, style={"margin-top": "16px"}),
                 dbc.Col(graph_pdr_metric, md=6, style={"margin-top": "16px"}),
                 dbc.Col(graph_pdr_metric, md=6, style={"margin-top": "16px"}),
 

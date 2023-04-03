@@ -32,8 +32,8 @@ from flask import request
 from components.navigation import navbar, main_page_heading, nav_drawer
 
 # declare global variables that will be updated by AAS
-global df_pdr, df_icmp, df_received, df_queueloss, df_energy
-df_pdr = df_icmp = df_received = df_queueloss = df_energy = None
+global df_pdr, df_icmp, df_received, df_queueloss, df_energy, df_e2e, df_deadloss
+df_pdr = df_icmp = df_received = df_queueloss = df_energy = df_e2e = df_deadloss = None
 
 dbt.load_figure_template("DARKLY")
 
@@ -63,11 +63,13 @@ app.layout = html.Div(
     Output("graph-icmp", "figure"),
     Output("graph-received", "figure"),
     Output("graph-queueloss", "figure"),
+    Output("graph-e2e", "figure"),
+    Output("graph-deadloss", "figure"),
     Output("graph_duty_cycle", "figure"),
     [Input("interval-component", "n_intervals")],
 )
 def data_scheduler(n_intervals):
-    global df_pdr, df_icmp, df_received, df_queueloss, df_energy
+    global df_pdr, df_icmp, df_received, df_queueloss, df_energy,df_e2e,df_deadloss
 
     # If data hasn't been udpate for my graph return an empty graph
     if type(df_pdr) == type(None):
@@ -104,7 +106,38 @@ def data_scheduler(n_intervals):
             title="Number of received packets",
             labels={"env_timestamp": "Time Invervals", "total_packets": "Number of packets"},
         )
-    
+        # Nwe - for end to end delay
+    if type(df_e2e) == type(None):
+        e2e_graph = px.line(title="Average End to End Delay")
+    else:
+        e2e_graph = px.line(
+            df_e2e,
+            x="env_timestamp",
+            y="average_delay",
+            color_discrete_sequence=["red"],
+            title="Average End to End Delay",
+            labels={"env_timestamp": "Time Invervals", "average_delay": "Milli-Seconds"},
+        )
+        #e2e_graph.update_traces(marker_color="green")
+        e2e_graph.update_traces(line_color='blue')
+
+    # Nwe - for deadloss
+    if type(df_deadloss) == type(None):
+        deadloss_graph = px.line(title="Deadline Loss Percentage")
+    else:
+        deadloss_graph = px.line(
+            df_deadloss,
+            x="env_timestamp",
+            y="deadloss_percent",
+            title="Deadline Loss Percentage",
+            labels={"env_timestamp": "Time Invervals", "deadloss_percent": "Deadline Loss Packets %"},
+            
+        )
+        #deadloss_graph.update_traces(marker_color="green")
+        deadloss_graph.update_traces(line_color='blue')
+
+    print(df_deadloss)
+
     if type(df_queueloss) == type(None):
         queueloss_graph = px.bar(title="Queue loss")
     else:
@@ -139,7 +172,7 @@ def data_scheduler(n_intervals):
                 layout={"plot_bgcolor": "#222", "paper_bgcolor": "#222"},
             )
 
-    return (pdr_graph, icmp_graph, received_graph, queueloss_graph, graph_duty_cycle)
+    return (pdr_graph, icmp_graph,received_graph, queueloss_graph, e2e_graph,deadloss_graph,graph_duty_cycle)
 
 
 
@@ -167,7 +200,7 @@ def req():
         # Get the x and y data that the figure refers to
         global df_icmp
         df_icmp = data
-
+    
     #nomin
     if owner == "received_metrics":
         # Get the x and y data that the figure refers to
@@ -180,12 +213,20 @@ def req():
         df_queueloss = data
     #nomin
 
+    if owner == "e2e_metric":
+        # Get the x and y data that the figure refers to
+        global df_e2e
+        df_e2e = data
+    
+    if owner == "deadloss_metric":
+        # Get the x and y data that the figure refers to
+        global df_deadloss
+        df_deadloss = data
+    
     if owner == "energy_cons_metric":
-       # breakpoint()
         global df_energy
         df_energy = data
         # check that df_energy[0].energy_cons gives data required
-
 
     """  #####  """
 

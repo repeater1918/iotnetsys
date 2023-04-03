@@ -27,6 +27,8 @@ from database.mongodb import Database
 from fastapi import FastAPI
 from models import MetaStream, PacketStream, calculate_pdr_metrics, calculate_icmp_metrics, calculate_received_metrics, calculate_queue_loss, \
 calculate_energy_cons_metrics
+from models.e2e_delay import calculate_end_to_end_delay
+from models.dead_loss import calculate_dead_loss
 
 FRONT_END_URL = "http://127.0.0.1:8050/data-update"
 
@@ -103,6 +105,24 @@ def packet_metric_scheduler():
         # Step 4 - pass your dictionary data into the on_packet_data_update to send it to the front-end
         send_data_to_front_end(data)
 
+        # Nwe - to calculate end-to-end delay
+        e2e_metric = calculate_end_to_end_delay(df_all_packets, timeframe=60000, bins=10)
+        # convert dataframe to a dictionary so it can be sent as json
+        e2e_dict = e2e_metric.to_dict("records")
+        # adding a label to data so when it reaches the front end we know who it belongs to
+        data = {"data": e2e_dict, "owner": "e2e_metric"}
+        # pass dictionary data into the on_packet_data_update to send it to the front-end
+        send_data_to_front_end(data)
+
+        # Nwe - to calculate dead loss
+        deadloss_metric = calculate_dead_loss(df_all_packets, timeframe=60000, bins=10)
+        # convert dataframe to a dictionary so it can be sent as json
+        deadloss_dict = deadloss_metric.to_dict("records")
+        # adding a label to data so when it reaches the front end we know who it belongs to
+        data = {"data": deadloss_dict, "owner": "deadloss_metric"}
+        # pass dictionary data into the on_packet_data_update to send it to the front-end
+        send_data_to_front_end(data)
+
         received_metrics = calculate_received_metrics(df_all_packets, timeframe=20000, bins=10)
         metric_dict = received_metrics.to_dict("records")
         data = {"data": metric_dict, "owner": "received_metrics"}
@@ -113,7 +133,7 @@ def packet_metric_scheduler():
         # Notify threads metric calculation is complete (db updates can resume)
         is_calculating_packet.clear()
 
-        time.sleep(5)
+        time.sleep(5) 
 
 
 def meta_metric_scheduler():
@@ -175,7 +195,7 @@ def meta_metric_scheduler():
         # Notify threads metric calculation is complete (db updates can resume)
         is_calculating_meta.clear()
 
-        time.sleep(15)
+        time.sleep(15) 
 
 
 def watch_packetlogs() -> None:

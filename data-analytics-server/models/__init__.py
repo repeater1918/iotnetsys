@@ -4,3 +4,4 @@ from models.icmp_metrics import calculate_icmp_metrics
 from models.pdr_metric import calculate_pdr_metrics
 from models.received_packet_metrics import calculate_received_metrics
 from models.queue_loss_metrics import calculate_queue_loss
+from models.enery_cons_metric import calculate_energy_cons_metrics

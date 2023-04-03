@@ -25,7 +25,8 @@ from typing import Dict, List
 import requests
 from database.mongodb import Database
 from fastapi import FastAPI
-from models import MetaStream, PacketStream, calculate_pdr_metrics, calculate_icmp_metrics, calculate_received_metrics, calculate_queue_loss
+from models import MetaStream, PacketStream, calculate_pdr_metrics, calculate_icmp_metrics, calculate_received_metrics, calculate_queue_loss, \
+calculate_energy_cons_metrics
 
 FRONT_END_URL = "http://127.0.0.1:8050/data-update"
 
@@ -86,15 +87,19 @@ def packet_metric_scheduler():
 
         # This dataframe represents all historical packets
         df_all_packets = packet_stream.flush_stream().copy(deep=True)
+        
 
         """ ########### Place calcs below here ########### """
 
         # Step 1 - using all historical packets (df_all_packets) - calculate your metrics and return a dataframe
         pdr_metric = calculate_pdr_metrics(df_all_packets, timeframe=60000, bins=10)
+        
         # Step 2 - when you have the result convert your dataframe to a dictionary so it can be sent as json
         metric_dict = pdr_metric.to_dict("records")
+        
         # Step 3 - add a label to your data so when it reaches the front end we know who it belongs to
         data = {"data": metric_dict, "owner": "pdr_metric"}
+       
         # Step 4 - pass your dictionary data into the on_packet_data_update to send it to the front-end
         send_data_to_front_end(data)
 
@@ -153,10 +158,19 @@ def meta_metric_scheduler():
         queueloss_metrics = calculate_queue_loss(df_all_meta_packets)
         metric_dict = queueloss_metrics.to_dict("records")
         data = {"data": metric_dict, "owner": "queueloss_metrics"}
-        #breakpoint()
+        send_data_to_front_end(data)
+
+                # Step 1 - using all historical packets (df_all_packets) - calculate your metrics and return a dataframe
+        energy_cons_metric = calculate_energy_cons_metrics(df_all_meta_packets)
+        # Step 2 - when you have the result convert your dataframe to a dictionary so it can be sent as json
+        energy_metric_dict = energy_cons_metric.to_dict("records")
+        # Step 3 - add a label to your data so when it reaches the front end we know who it belongs to
+        data = {"data": energy_metric_dict, "owner": "energy_cons_metric"}
+        # Step 4 - pass your dictionary data into the on_packet_data_update to send it to the front-end
         send_data_to_front_end(data)
         
         """ ########### Place calcs above here ########### """
+
 
         # Notify threads metric calculation is complete (db updates can resume)
         is_calculating_meta.clear()

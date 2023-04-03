@@ -5,8 +5,8 @@ import plotly.express as px
 from dash import Input, Output, State, dcc, html
 import dash_bootstrap_templates as dbt
 import dash_bootstrap_components as dbc
-
 from views.graph_duty_cycle import graph_duty_cycle
+import plotly.graph_objects as go
 
 # from app import server
 
@@ -18,6 +18,7 @@ graph_pdr_metric = dcc.Graph(id="graph-pdr", figure=px.bar(title="Percentage Pac
 graph_icmp_metric = dcc.Graph(id="graph-icmp", figure=px.bar(title="ICMP Packets"))
 graph_received_metric = dcc.Graph(id="graph-received", figure=px.line(title="Number of received packets"))
 graph_queue_loss = dcc.Graph(id="graph-queueloss", figure=px.bar(title="Queue loss"))
+graph_duty_cycle = dcc.Graph(id="graph_duty_cycle")
 
 layout = html.Div(
     children=[

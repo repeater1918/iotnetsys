@@ -1,10 +1,7 @@
 """
 Front-End
-
 Renders UI dashboard and updates figures intermittently using callbacks
-
 TODO:
-
 1. Figure out how to visualise and create required metrics in Dash
 2. Figure out format of updates and frequency
 3. Design and implement based on 1 + 2
@@ -14,6 +11,7 @@ import dash_bootstrap_components as dbc
 import dash_bootstrap_templates as dbt
 import flask
 import pandas as pd
+import plotly.graph_objects as go
 
 server = flask.Flask(__name__)
 app = dash.Dash(
@@ -34,8 +32,8 @@ from flask import request
 from components.navigation import navbar, main_page_heading, nav_drawer
 
 # declare global variables that will be updated by AAS
-global df_pdr, df_icmp, df_received, df_queueloss
-df_pdr = df_icmp = df_received = df_queueloss = None
+global df_pdr, df_icmp, df_received, df_queueloss, df_energy
+df_pdr = df_icmp = df_received = df_queueloss = df_energy = None
 
 dbt.load_figure_template("DARKLY")
 
@@ -65,10 +63,11 @@ app.layout = html.Div(
     Output("graph-icmp", "figure"),
     Output("graph-received", "figure"),
     Output("graph-queueloss", "figure"),
+    Output("graph_duty_cycle", "figure"),
     [Input("interval-component", "n_intervals")],
 )
 def data_scheduler(n_intervals):
-    global df_pdr, df_icmp, df_received, df_queueloss
+    global df_pdr, df_icmp, df_received, df_queueloss, df_energy
 
     # If data hasn't been udpate for my graph return an empty graph
     if type(df_pdr) == type(None):
@@ -94,8 +93,6 @@ def data_scheduler(n_intervals):
             labels={"node": "Node ID", "sub_type_value": "Total ICMP Packets"},
         )
         icmp_graph.update_traces(marker_color="green")
-    #breakpoint()
-
     #nomin
     if type(df_received) == type(None):
         received_graph = px.line(title="Number of received packets")
@@ -120,7 +117,30 @@ def data_scheduler(n_intervals):
         )
     #nomin  
 
-    return (pdr_graph, icmp_graph, received_graph, queueloss_graph)
+    if type(df_energy) == type(None):
+        graph_duty_cycle = px.bar(title="Energy Level")
+    else:
+        graph_duty_cycle = go.Figure(
+                go.Indicator(
+                    mode="gauge+number+delta",
+                    value=df_energy.loc[0,"energy_cons"],
+                    
+                    domain={"x": [0, 1], "y": [0, 1]},
+                    delta={"reference": 100},
+                    title={"text": "Energy Level"},
+                    gauge={
+                        "axis": {"range": [None, 100]},
+                        "steps": [
+                            {"range": [0, 400], "color": "gray"},
+                        ],
+                    },
+                ),
+
+                layout={"plot_bgcolor": "#222", "paper_bgcolor": "#222"},
+            )
+
+    return (pdr_graph, icmp_graph, received_graph, queueloss_graph, graph_duty_cycle)
+
 
 
 # The AAS will send data to this endpoint, it will trigger when something is received
@@ -159,6 +179,13 @@ def req():
         global df_queueloss
         df_queueloss = data
     #nomin
+
+    if owner == "energy_cons_metric":
+       # breakpoint()
+        global df_energy
+        df_energy = data
+        # check that df_energy[0].energy_cons gives data required
+
 
     """  #####  """
 

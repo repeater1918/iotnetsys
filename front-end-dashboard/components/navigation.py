@@ -1,6 +1,6 @@
 import dash_bootstrap_components as dbc
 from dash import html
-
+import dash
 
 navbar = dbc.Navbar(
     children=[
@@ -52,14 +52,12 @@ navbar = dbc.Navbar(
 node_typology = dbc.ListGroup(children=
     [
         dbc.ListGroupItem("Edge Server (Node 1)", className="typology-lvl1"),
-        dbc.ListGroupItem("Node 2", className="typology-lvl2"),
-        dbc.ListGroupItem("Node 4", className="typology-lvl3"),
-        dbc.ListGroupItem("Node 5", className="typology-lvl3"),
-        dbc.ListGroupItem("Node 3", className="typology-lvl2"),
-        dbc.ListGroupItem("Node 6", className="typology-lvl3"),
-        dbc.ListGroupItem("Node 8", className="typology-lvl4"),
-        dbc.ListGroupItem("Node 9", className="typology-lvl4"),
-        dbc.ListGroupItem("Node 7", className="typology-lvl3"),
+        dbc.ListGroupItem("Node 2", className="typology-lvl2", href="/node_view/2"),
+        dbc.ListGroupItem("Node 4", className="typology-lvl3", href="/node_view/4"),
+        dbc.ListGroupItem("Node 5", className="typology-lvl3", href="/node_view/5"),
+        dbc.ListGroupItem("Node 3", className="typology-lvl2", href="/node_view/3"),
+        dbc.ListGroupItem("Node 6", className="typology-lvl3", href="/node_view/6"),
+        dbc.ListGroupItem("Node 7", className="typology-lvl3", href="/node_view/7"),
     ],
 )
 
@@ -95,3 +93,11 @@ main_page_heading = dbc.Row(
                 dbc.Col(html.Div('Network Name')),
                 dbc.Col(html.Div("Network Level Metrics"), style={'text-align': 'right'}),
             ], class_name='page-heading')
+
+def top_page_heading(head_msg="Network Level"):
+        return (
+                dbc.Row([
+                    dbc.Col(html.Div(head_msg)),
+                    dbc.Col(html.Div(f"{head_msg} Metrics"), style={'text-align': 'right'})], class_name='page-heading'),
+                dbc.Row(dbc.Col(html.Div(children=dash.page_container)))                                        
+                )

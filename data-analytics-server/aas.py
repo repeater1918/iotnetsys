@@ -21,8 +21,8 @@ import threading
 import time
 from datetime import datetime
 from typing import Dict, List
-
-import requests
+from collections import defaultdict
+import requests, json
 from database.mongodb import Database
 from fastapi import FastAPI
 from models import MetaStream, PacketStream, calculate_pdr_metrics, calculate_icmp_metrics, calculate_received_metrics, calculate_queue_loss, \
@@ -45,9 +45,13 @@ global update_event
 update_event = datetime.now()
 global packet_stream, meta_stream
 packet_stream = PacketStream(packet_update_limit=100)
-meta_stream = MetaStream(packet_update_limit=10)
+meta_stream = MetaStream(packet_update_limit=8)
 global last_packet_id, last_meta_id
 last_packet_id = last_meta_id = None
+last_packet_ids = []
+global network_df,node_df 
+network_df = {} #this is storing dataframe for network level metric in format {"owner_metric": metric_dict}, example: {"pdr_metric": data}
+node_df = defaultdict(dict) #this is storing dataframe for node level metric in format {"nodeid": {"owner_metric": metric_dict}}, example: {"1": {"pdr_metric": data}}
 
 # Events (bools) to help prevent race conditions between metric and db watchers
 is_updating_packet = threading.Event()
@@ -97,36 +101,39 @@ def packet_metric_scheduler():
         pdr_metric = calculate_pdr_metrics(df_all_packets, timeframe=60000, bins=10)
         
         # Step 2 - when you have the result convert your dataframe to a dictionary so it can be sent as json
-        metric_dict = pdr_metric.to_dict("records")
+        pdr_metric_dict = pdr_metric.to_dict("records")
         
         # Step 3 - add a label to your data so when it reaches the front end we know who it belongs to
-        data = {"data": metric_dict, "owner": "pdr_metric"}
-       
-        # Step 4 - pass your dictionary data into the on_packet_data_update to send it to the front-end
-        send_data_to_front_end(data)
+        network_df['pdr_metric'] = pdr_metric_dict 
 
         # Nwe - to calculate end-to-end delay
         e2e_metric = calculate_end_to_end_delay(df_all_packets, timeframe=60000, bins=10)
         # convert dataframe to a dictionary so it can be sent as json
         e2e_dict = e2e_metric.to_dict("records")
         # adding a label to data so when it reaches the front end we know who it belongs to
-        data = {"data": e2e_dict, "owner": "e2e_metric"}
+        network_df['e2e_metric'] = e2e_dict
         # pass dictionary data into the on_packet_data_update to send it to the front-end
-        send_data_to_front_end(data)
 
         # Nwe - to calculate dead loss
         deadloss_metric = calculate_dead_loss(df_all_packets, timeframe=60000, bins=10)
         # convert dataframe to a dictionary so it can be sent as json
         deadloss_dict = deadloss_metric.to_dict("records")
         # adding a label to data so when it reaches the front end we know who it belongs to
-        data = {"data": deadloss_dict, "owner": "deadloss_metric"}
+        network_df['deadloss_metric'] = deadloss_dict 
         # pass dictionary data into the on_packet_data_update to send it to the front-end
-        send_data_to_front_end(data)
 
         received_metrics = calculate_received_metrics(df_all_packets, timeframe=20000, bins=10)
-        metric_dict = received_metrics.to_dict("records")
-        data = {"data": metric_dict, "owner": "received_metrics"}
-        send_data_to_front_end(data)
+        received_metric_dict = received_metrics.to_dict("records")
+        network_df['received_metric'] = received_metric_dict 
+
+        for node in range(2,8):
+            #TODO: change to dynamic node
+            #Put your metric dict for node level here in below format
+            #node_df[nodeid][owner_tag] = metric_dict (Example: nodedf[2]['pdr_metric'] = node2_pdr_metric_dict) 
+            node_df[node]["pdr_metric"] = pdr_metric_dict 
+            node_df[node]["e2e_metric"] = e2e_dict
+            node_df[node]["deadloss_metric"] = deadloss_dict
+            node_df[node]["received_metric"] = received_metric_dict
        
         """ ########### Place calcs above here ########### """
 
@@ -169,25 +176,28 @@ def meta_metric_scheduler():
         # Step 1 - using all historical packets (df_all_packets) - calculate your metrics and return a dataframe
         icmp_metric = calculate_icmp_metrics(df_all_meta_packets)
         # Step 2 - when you have the result convert your dataframe to a dictionary so it can be sent as json
-        metric_dict = icmp_metric.to_dict("records")
+        icmp_metric_dict = icmp_metric.to_dict("records")
         # Step 3 - add a label to your data so when it reaches the front end we know who it belongs to
-        data = {"data": metric_dict, "owner": "icmp_metric"}
-        # Step 4 - pass your dictionary data into the on_packet_data_update to send it to the front-end
-        send_data_to_front_end(data)
+        network_df['icmp_metric'] = icmp_metric_dict        
 
         queueloss_metrics = calculate_queue_loss(df_all_meta_packets)
-        metric_dict = queueloss_metrics.to_dict("records")
-        data = {"data": metric_dict, "owner": "queueloss_metrics"}
-        send_data_to_front_end(data)
+        queueloss_metric_dict = queueloss_metrics.to_dict("records")
+        network_df['queueloss_metric'] = icmp_metric_dict
 
-                # Step 1 - using all historical packets (df_all_packets) - calculate your metrics and return a dataframe
+        # Step 1 - using all historical packets (df_all_packets) - calculate your metrics and return a dataframe
         energy_cons_metric = calculate_energy_cons_metrics(df_all_meta_packets)
         # Step 2 - when you have the result convert your dataframe to a dictionary so it can be sent as json
         energy_metric_dict = energy_cons_metric.to_dict("records")
-        # Step 3 - add a label to your data so when it reaches the front end we know who it belongs to
-        data = {"data": energy_metric_dict, "owner": "energy_cons_metric"}
-        # Step 4 - pass your dictionary data into the on_packet_data_update to send it to the front-end
-        send_data_to_front_end(data)
+        # Step 3 - pass your dictionary data into the on_packet_data_update to send it to the front-end
+        network_df['energy_cons_metric'] = energy_metric_dict
+
+        for node in range(2,8):
+            #TODO: change to dynamic node
+            #Put your metric dict for node level here in below format
+            #node_df[nodeid][owner_tag] = metric_dict (Example: nodedf[2]['pdr_metric'] = node2_pdr_metric_dict) 
+            node_df[node]["icmp_metric"] = icmp_metric_dict 
+            node_df[node]["queueloss_metric"] = queueloss_metric_dict
+            node_df[node]["energy_cons_metric"] = energy_metric_dict
         
         """ ########### Place calcs above here ########### """
 
@@ -205,16 +215,16 @@ def watch_packetlogs() -> None:
         while is_calculating_packet.is_set():
             time.sleep(5)
 
-        global last_packet_id, packet_stream
+        global last_packet_id, packet_stream, last_packet_ids
 
         # Notify threads data update is active
         is_updating_packet.set()
 
         # Query 1: Check the packetlog collection and get new document starting from last result
         data, id_max = client.find_by_pagination(
-            collection_name="packetlogs", last_id=last_packet_id, page_size=100
-        )
-
+                collection_name="packetlogs", last_id=last_packet_id, page_size=100
+            )
+        
         if data is None:
             # print("WatchPcktLogs: no new packet logs in DB, putting watcher to sleep")
             is_updating_packet.clear()
@@ -225,7 +235,7 @@ def watch_packetlogs() -> None:
         packet_stream.append_stream(data)
         # Remember the latest document received for next query
         last_packet_id = id_max
-
+        #print(data)
         # Notify threads data update is active
         is_updating_packet.clear()
         # print(
@@ -300,6 +310,25 @@ def send_data_to_front_end(response: List[Dict]):
         pass
 
     update_event = datetime.now()
+
+
+@app.get("/network_data/{metric_owner}")
+async def read_network_df(metric_owner):
+    response_df = network_df[metric_owner]
+    return response_df
+
+
+#Query format for nodelv: AAS_URI/nodelv_data/pdr_metric?node=2 
+@app.get("/node_data/{metric_owner}")
+async def read_node_df(metric_owner, node: int = 1):
+    if node > 1:
+        #node 1 is root already, no need to get it
+        #print(f"API query for {node}")
+        response_df = node_df[node][metric_owner]
+        return response_df
+    else: 
+        return json.dumps({"success": False}), 200, {"ContentType": "application/json"}
+
 
 
 # create a thread to run the packet log collection data fetch

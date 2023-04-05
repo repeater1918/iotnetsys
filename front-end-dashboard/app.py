@@ -12,6 +12,7 @@ import dash_bootstrap_templates as dbt
 import flask
 import pandas as pd
 import plotly.graph_objects as go
+from utils.data_connectors import get_network_data
 
 server = flask.Flask(__name__)
 app = dash.Dash(
@@ -19,219 +20,73 @@ app = dash.Dash(
     use_pages=True,
     server=server,
     external_stylesheets=[dbc.themes.DARKLY, dbc.icons.BOOTSTRAP],
+    suppress_callback_exceptions=True,
 )
+
+UPDATE_INTERVAL = 5 * 1000 # check for a data update every 5 seconds
 
 import json
 from datetime import datetime
-
 
 import plotly.express as px
 from dash import Input, Output, State, dcc, html, ctx
 from dash_bootstrap_components._components.Container import Container
 from flask import request
-from components.navigation import navbar, main_page_heading, nav_drawer
-
-# declare global variables that will be updated by AAS
-global df_pdr, df_icmp, df_received, df_queueloss, df_energy, df_e2e, df_deadloss
-df_pdr = df_icmp = df_received = df_queueloss = df_energy = df_e2e = df_deadloss = None
+from components.navigation import navbar, nav_drawer, top_page_heading
 
 dbt.load_figure_template("DARKLY")
+
 
 app.layout = html.Div(
     children=[
         navbar,
+        dcc.Location(id='url', refresh=False),
+        # dcc.Store stores the session var
+        dcc.Store(id='session_data'),
+        dcc.Interval(
+            id="interval-component",
+            interval= UPDATE_INTERVAL,  
+        ),
         html.Div(
             className="wrapper",
+            
             children=[
                 nav_drawer,
                 html.Div(
                     className="remaining-width",
+                    id="page_heading",
                     children=[
-                        main_page_heading,
-                        dbc.Row(dbc.Col(html.Div(children=dash.page_container))),
+                        *top_page_heading("Network Level")                       
+                        
                     ],
                 ),
             ],
         ),
+        html.P(id="testing")
     ]
 )
 
+#child_container = dbc.Row(dbc.Col(html.Div(children=dash.page_container)))
 
-# Callback to update data in graphs (runs every 5 sec)
 @app.callback(
-    Output("graph-pdr", "figure"),
-    Output("graph-icmp", "figure"),
-    Output("graph-received", "figure"),
-    Output("graph-queueloss", "figure"),
-    Output("graph-e2e", "figure"),
-    Output("graph-deadloss", "figure"),
-    Output("graph_duty_cycle", "figure"),
-    [Input("interval-component", "n_intervals")],
+        Output("page_heading", 'children'),
+        Input('url', 'pathname'),
+        
 )
-def data_scheduler(n_intervals):
-    global df_pdr, df_icmp, df_received, df_queueloss, df_energy,df_e2e,df_deadloss
-
-    # If data hasn't been udpate for my graph return an empty graph
-    if type(df_pdr) == type(None):
-        pdr_graph = px.line(title="Percentage Packet Loss")
-    else:
-        pdr_graph = px.line(
-            df_pdr,
-            x="env_timestamp",
-            y=["failed_packets_precentage", "successful_packets_precentage"],
-            color_discrete_sequence=["red", "blue"],
-            title="Packet Delivery Ratios",
-            labels={"env_timestamp": "Time Invervals", "value": "Percentage"},
-        )
-
-    if type(df_icmp) == type(None):
-        icmp_graph = px.bar(title="ICMP Packets")
-    else:
-        icmp_graph = px.bar(
-            df_icmp,
-            x="node",
-            y="sub_type_value",
-            title="ICMP Packets",
-            labels={"node": "Node ID", "sub_type_value": "Total ICMP Packets"},
-        )
-        icmp_graph.update_traces(marker_color="green")
-    #nomin
-    if type(df_received) == type(None):
-        received_graph = px.line(title="Number of received packets")
-    else:
-        received_graph = px.line(
-            df_received,
-            x="env_timestamp",
-            y="total_packets",
-            title="Number of received packets",
-            labels={"env_timestamp": "Time Invervals", "total_packets": "Number of packets"},
-        )
-        # Nwe - for end to end delay
-    if type(df_e2e) == type(None):
-        e2e_graph = px.line(title="Average End to End Delay")
-    else:
-        e2e_graph = px.line(
-            df_e2e,
-            x="env_timestamp",
-            y="average_delay",
-            color_discrete_sequence=["red"],
-            title="Average End to End Delay",
-            labels={"env_timestamp": "Time Invervals", "average_delay": "Milli-Seconds"},
-        )
-        #e2e_graph.update_traces(marker_color="green")
-        e2e_graph.update_traces(line_color='blue')
-
-    # Nwe - for deadloss
-    if type(df_deadloss) == type(None):
-        deadloss_graph = px.line(title="Deadline Loss Percentage")
-    else:
-        deadloss_graph = px.line(
-            df_deadloss,
-            x="env_timestamp",
-            y="deadloss_percent",
-            title="Deadline Loss Percentage",
-            labels={"env_timestamp": "Time Invervals", "deadloss_percent": "Deadline Loss Packets %"},
-            
-        )
-        #deadloss_graph.update_traces(marker_color="green")
-        deadloss_graph.update_traces(line_color='blue')
-
-    print(df_deadloss)
-
-    if type(df_queueloss) == type(None):
-        queueloss_graph = px.bar(title="Queue loss")
-    else:
-        queueloss_graph = px.bar(
-            df_queueloss,
-            x="node",
-            y="sub_type_value",
-            title="Queue loss",
-            labels={"node": "Node ID", "sub_type_value": "Number of dropped packets"},
-        )
-    #nomin  
-
-    if type(df_energy) == type(None):
-        graph_duty_cycle = px.bar(title="Energy Level")
-    else:
-        graph_duty_cycle = go.Figure(
-                go.Indicator(
-                    mode="gauge+number+delta",
-                    value=df_energy.loc[0,"energy_cons"],
-                    
-                    domain={"x": [0, 1], "y": [0, 1]},
-                    delta={"reference": 100},
-                    title={"text": "Energy Level"},
-                    gauge={
-                        "axis": {"range": [None, 100]},
-                        "steps": [
-                            {"range": [0, 400], "color": "gray"},
-                        ],
-                    },
-                ),
-
-                layout={"plot_bgcolor": "#222", "paper_bgcolor": "#222"},
-            )
-
-    return (pdr_graph, icmp_graph,received_graph, queueloss_graph, e2e_graph,deadloss_graph,graph_duty_cycle)
+def load_heading(pathname):
+    if 'node_view' in pathname:
+        node_heading_str = f"Node {pathname.split('/')[-1]}"
+        return top_page_heading(node_heading_str)
+    else: 
+        return top_page_heading("Network Level")
 
 
-
-# The AAS will send data to this endpoint, it will trigger when something is received
-@server.route("/data-update", methods=["POST"])
-def req():
-    # Some data was received
-    # breakpoint()
-    print(f"data received = {request.json['owner']}")
-    #print(request.json['data'])
-
-    # Step 1 - who does this data belong to
-    owner = request.json["owner"]
-    # Step 2 - get the data payload and convert to dataframe
-    data = pd.DataFrame(request.json["data"])
-    print(data)
-    """  ##### Add your updates here #####  """
-    # Step 3 - use owner tag to identify who the update belongs to -- add your own conditions here:
-    if owner == "pdr_metric":
-        # Get the x and y data that the figure refers to
-        global df_pdr
-        df_pdr = data
-
-    if owner == "icmp_metric":
-        # Get the x and y data that the figure refers to
-        global df_icmp
-        df_icmp = data
-    
-    #nomin
-    if owner == "received_metrics":
-        # Get the x and y data that the figure refers to
-        global df_received
-        df_received = data
-    
-    if owner == "queueloss_metrics":
-        # Get the x and y data that the figure refers to
-        global df_queueloss
-        df_queueloss = data
-    #nomin
-
-    if owner == "e2e_metric":
-        # Get the x and y data that the figure refers to
-        global df_e2e
-        df_e2e = data
-    
-    if owner == "deadloss_metric":
-        # Get the x and y data that the figure refers to
-        global df_deadloss
-        df_deadloss = data
-    
-    if owner == "energy_cons_metric":
-        global df_energy
-        df_energy = data
-        # check that df_energy[0].energy_cons gives data required
-
-    """  #####  """
-
-    # return OK/sucess reponse to AAS
-    return json.dumps({"success": True}), 200, {"ContentType": "application/json"}
+#App management callbacks
+@app.callback(Output('session_data', 'data'),
+              Input('url', 'pathname'))
+def update_session_storage(pathname):
+    session_data = {'update-interval': UPDATE_INTERVAL}
+    return session_data
 
 
 if __name__ == "__main__":

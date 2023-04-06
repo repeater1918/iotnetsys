@@ -64,7 +64,7 @@ for index in range(2,8):
         # If data hasn't been udpate for my graph return an empty graph
         #Using result from API directly        
         df_pdr = pd.DataFrame(api_data['pdr_metric'])
-        if type(df_pdr) == type(None):
+        if len(api_data['pdr_metric']) == 0:
             pdr_graph = px.line(title="Percentage Packet Loss")
         else:      
             pdr_graph = px.line(
@@ -77,7 +77,7 @@ for index in range(2,8):
             )
 
         df_icmp = pd.DataFrame(api_data['icmp_metric'])
-        if type(df_icmp) == type(None):
+        if len(api_data['icmp_metric']) == 0:
             icmp_graph = px.bar(title="ICMP Packets")
         else:
             icmp_graph = px.bar(
@@ -91,7 +91,7 @@ for index in range(2,8):
         #nomin
 
         df_received = pd.DataFrame(api_data['received_metric'])
-        if type(df_received) == type(None):
+        if len(api_data['received_metric']) == 0:
             received_graph = px.line(title="Number of received packets")
         else:
             received_graph = px.line(
@@ -103,7 +103,7 @@ for index in range(2,8):
             )
             # Nwe - for end to end delay
         df_e2e = pd.DataFrame(api_data['e2e_metric'])
-        if type(df_e2e) == type(None):
+        if len(api_data['e2e_metric']) == 0:
             e2e_graph = px.line(title="Average End to End Delay")
         else:
             e2e_graph = px.line(
@@ -119,7 +119,7 @@ for index in range(2,8):
 
         # Nwe - for deadloss
         df_deadloss = pd.DataFrame(api_data['deadloss_metric'])
-        if type(df_deadloss) == type(None):
+        if len(api_data['deadloss_metric']) == 0:
             deadloss_graph = px.line(title="Deadline Loss Percentage")
         else:
             deadloss_graph = px.line(
@@ -134,7 +134,7 @@ for index in range(2,8):
             deadloss_graph.update_traces(line_color='blue')
 
         df_queueloss = pd.DataFrame(api_data['queueloss_metric'])
-        if type(df_queueloss) == type(None):
+        if len(api_data['queueloss_metric']) == 0:
             queueloss_graph = px.bar(title="Queue loss")
         else:
             queueloss_graph = px.bar(
@@ -146,7 +146,7 @@ for index in range(2,8):
             )
         #nomin  
         df_energy = pd.DataFrame(api_data['energy_cons_metric'])
-        if type(df_energy) == type(None):
+        if len(api_data['energy_cons_metric']) == 0:
             graph_duty_cycle = px.bar(title="Energy Level")
         else:
             graph_duty_cycle = go.Figure(

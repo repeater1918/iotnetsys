@@ -7,7 +7,12 @@ supported_metrics = ["pdr_metric","icmp_metric","received_metric", "e2e_metric",
 def get_network_data():
     result_dict = {}
     for v in supported_metrics:
-        res = requests.get(AAS_URI+f"network_data/{v}").json() 
+        res = requests.get(AAS_URI+f"network_data/{v}")
+        if res.status_code == 200:
+            res = res.json()
+        else:
+            res = []
+        
         result_dict[v] = res
     #print ("Cache updated at ", datetime.now())
     return result_dict
@@ -16,7 +21,11 @@ def get_network_data():
 def get_node_data(nodeid):
     result_dict = {}
     for v in supported_metrics:
-        res = requests.get(AAS_URI+f"node_data/{v}?node={nodeid}").json() 
+        res = requests.get(AAS_URI+f"node_data/{v}?node={nodeid}") 
+        if res.status_code == 200:
+            res = res.json()
+        else:
+            res = []
         result_dict[v] = res
     #print ("Cache updated at ", datetime.now())
     return result_dict

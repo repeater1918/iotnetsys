@@ -21,6 +21,7 @@ import threading
 import time
 from datetime import datetime
 from typing import Dict, List
+import copy
 from collections import defaultdict
 import requests, json
 from database.mongodb import Database
@@ -101,7 +102,7 @@ def packet_metric_scheduler():
         """ ########### Place calcs below here ########### """
 
         # Step 1 - using all historical packets (df_all_packets) - calculate your metrics and return a dataframe
-        pdr_metric = calculate_pdr_metrics(df_all_packets, timeframe=60000, bins=10)
+        pdr_metric = calculate_pdr_metrics(copy.deepcopy(df_all_packets), timeframe=60000, bins=10)
         
         # Step 2 - when you have the result convert your dataframe to a dictionary so it can be sent as json
         pdr_metric_dict = pdr_metric.to_dict("records")
@@ -121,7 +122,7 @@ def packet_metric_scheduler():
             pass
 
         # Nwe - to calculate end-to-end delay
-        e2e_metric = calculate_end_to_end_delay(df_all_packets, timeframe=60000, bins=10)
+        e2e_metric = calculate_end_to_end_delay(copy.deepcopy(df_all_packets), timeframe=60000, bins=10)
         # convert dataframe to a dictionary so it can be sent as json
         e2e_dict = e2e_metric.to_dict("records")
         # adding a label to data so when it reaches the front end we know who it belongs to
@@ -139,7 +140,7 @@ def packet_metric_scheduler():
             pass
 
         # Nwe - to calculate dead loss
-        deadloss_metric = calculate_dead_loss(df_all_packets, timeframe=60000, bins=10)
+        deadloss_metric = calculate_dead_loss(copy.deepcopy(df_all_packets), timeframe=60000, bins=10)
         # convert dataframe to a dictionary so it can be sent as json
         deadloss_dict = deadloss_metric.to_dict("records")
         # adding a label to data so when it reaches the front end we know who it belongs to
@@ -156,7 +157,7 @@ def packet_metric_scheduler():
             #node_df[node]['deadloss_metric'] = deadloss_node_metric_dict
             pass
 
-        received_metrics = calculate_received_metrics(df_all_packets, timeframe=20000, bins=10)
+        received_metrics = calculate_received_metrics(copy.deepcopy(df_all_packets), timeframe=60000, bins=10)
         received_metric_dict = received_metrics.to_dict("records")
         network_df['received_metric'] = received_metric_dict 
 
@@ -212,7 +213,7 @@ def meta_metric_scheduler():
 
         """ ########### Place calcs below here ########### """
         # Step 1 - using all historical packets (df_all_packets) - calculate your metrics and return a dataframe
-        icmp_metric = calculate_icmp_metrics(df_all_meta_packets)
+        icmp_metric = calculate_icmp_metrics(copy.deepcopy(df_all_meta_packets))
         # Step 2 - when you have the result convert your dataframe to a dictionary so it can be sent as json
         icmp_metric_dict = icmp_metric.to_dict("records")
         # Step 3 - add a label to your data so when it reaches the front end we know who it belongs to
@@ -229,7 +230,7 @@ def meta_metric_scheduler():
             pass
 
 
-        queueloss_metrics = calculate_queue_loss(df_all_meta_packets)
+        queueloss_metrics = calculate_queue_loss(copy.deepcopy(df_all_meta_packets))
         queueloss_metric_dict = queueloss_metrics.to_dict("records")
         network_df['queueloss_metric'] = queueloss_metric_dict
         #Step 4 - Calculate metric for specific node
@@ -244,7 +245,7 @@ def meta_metric_scheduler():
             pass
 
         # Step 1 - using all historical packets (df_all_packets) - calculate your metrics and return a dataframe
-        energy_cons_metric = calculate_energy_cons_metrics(df_all_meta_packets)
+        energy_cons_metric = calculate_energy_cons_metrics(copy.deepcopy(df_all_meta_packets))
         # Step 2 - when you have the result convert your dataframe to a dictionary so it can be sent as json
         energy_metric_dict = energy_cons_metric.to_dict("records")
         # Step 3 - pass your dictionary data into the on_packet_data_update to send it to the front-end
@@ -388,20 +389,26 @@ def send_data_to_front_end(response: List[Dict]):
 
 @app.get("/network_data/{metric_owner}")
 async def read_network_df(metric_owner):
-    response_df = network_df[metric_owner]
+    try:
+        response_df = network_df[metric_owner]
+    except:
+        response_df = {}
     return response_df
 
 
 #Query format for nodelv: AAS_URI/nodelv_data/pdr_metric?node=2 
 @app.get("/node_data/{metric_owner}")
 async def read_node_df(metric_owner, node: int = 1):
+    response_df = {}
     if node > 1:
         #node 1 is root already, no need to get it
         #print(f"API query for {node}")
-        response_df = node_df[node][metric_owner]
-        return response_df
-    else: 
-        return json.dumps({"success": False}), 200, {"ContentType": "application/json"}
+        try:
+            response_df = node_df[node][metric_owner]
+        except:
+            response_df = {}
+        
+    return response_df
 
 
 

@@ -109,6 +109,17 @@ def packet_metric_scheduler():
         # Step 3 - add a label to your data so when it reaches the front end we know who it belongs to
         network_df['pdr_metric'] = pdr_metric_dict 
 
+        #Step 4 - Calculate metric for specific node
+        for node in range(2,8):
+            #TODO: change to dynamic node
+            #Step 4.1 calculate metric for a specific node
+            #pdr_node_metric = calculate_pdr_metrics(df_all_meta_packets, node=node)
+            #Step 4.2 Convert calculated metric to dict
+            #pdr_node_metric_dict = pdr_metric.to_dict("records")
+            #Step 4.3 Put your metric dict for node level here in this format node_df[node][owner_tag] = metric_dict 
+            #node_df[node]['pdr_metric'] = pdr_node_metric_dict
+            pass
+
         # Nwe - to calculate end-to-end delay
         e2e_metric = calculate_end_to_end_delay(df_all_packets, timeframe=60000, bins=10)
         # convert dataframe to a dictionary so it can be sent as json
@@ -116,6 +127,16 @@ def packet_metric_scheduler():
         # adding a label to data so when it reaches the front end we know who it belongs to
         network_df['e2e_metric'] = e2e_dict
         # pass dictionary data into the on_packet_data_update to send it to the front-end
+        #Step 4 - Calculate metric for specific node
+        for node in range(2,8):
+            #TODO: change to dynamic node
+            #Step 4.1 calculate metric for a specific node
+            #e2e_node_metric = calculate_end_to_end_delay(df_all_meta_packets, node=node)
+            #Step 4.2 Convert calculated metric to dict
+            #e2e_node_metric_dict = e2e_metric.to_dict("records")
+            #Step 4.3 Put your metric dict for node level here in this format node_df[node][owner_tag] = metric_dict 
+            #node_df[node]['e2e_metric'] = e2e_node_metric_dict
+            pass
 
         # Nwe - to calculate dead loss
         deadloss_metric = calculate_dead_loss(df_all_packets, timeframe=60000, bins=10)
@@ -124,19 +145,33 @@ def packet_metric_scheduler():
         # adding a label to data so when it reaches the front end we know who it belongs to
         network_df['deadloss_metric'] = deadloss_dict 
         # pass dictionary data into the on_packet_data_update to send it to the front-end
+        #Step 4 - Calculate metric for specific node
+        for node in range(2,8):
+            #TODO: change to dynamic node
+            #Step 4.1 calculate metric for a specific node
+            #deadloss_node_metric = calculate_dead_loss(df_all_meta_packets, node=node)
+            #Step 4.2 Convert calculated metric to dict
+            #deadloss_node_metric_dict = deadloss_metric.to_dict("records")
+            #Step 4.3 Put your metric dict for node level here in this format node_df[node][owner_tag] = metric_dict 
+            #node_df[node]['deadloss_metric'] = deadloss_node_metric_dict
+            pass
 
         received_metrics = calculate_received_metrics(df_all_packets, timeframe=20000, bins=10)
         received_metric_dict = received_metrics.to_dict("records")
         network_df['received_metric'] = received_metric_dict 
 
+        #Step 4 - Calculate metric for specific node
         for node in range(2,8):
-            #TODO: change to dynamic node
-            #Put your metric dict for node level here in below format
-            #node_df[nodeid][owner_tag] = metric_dict (Example: nodedf[2]['pdr_metric'] = node2_pdr_metric_dict) 
-            node_df[node]["pdr_metric"] = pdr_metric_dict 
-            node_df[node]["e2e_metric"] = e2e_dict
-            node_df[node]["deadloss_metric"] = deadloss_dict
-            node_df[node]["received_metric"] = received_metric_dict
+
+            #Step 4.1 calculate metric for a specific node
+            #received_node_metrics = calculate_received_metrics(df_all_meta_packets, node=node)
+            #Step 4.2 Convert calculated metric to dict
+            #received_node_metrics_dict = received_node_metrics.to_dict("records")
+            #Step 4.3 Put your metric dict for node level here in this format node_df[node][owner_tag] = metric_dict 
+            #node_df[node]['received_metric'] = received_node_metrics_dict
+            pass
+
+
        
         """ ########### Place calcs above here ########### """
 
@@ -182,10 +217,31 @@ def meta_metric_scheduler():
         icmp_metric_dict = icmp_metric.to_dict("records")
         # Step 3 - add a label to your data so when it reaches the front end we know who it belongs to
         network_df['icmp_metric'] = icmp_metric_dict        
+        #Step 4 - Calculate metric for specific node
+        for node in range(2,8):
+            #TODO: change to dynamic node
+            #Step 4.1 calculate metric for a specific node
+            #icmp_node_metric = calculate_icmp_metrics(df_all_meta_packets, node=node)
+            #Step 4.2 Convert calculated metric to dict
+            #icmp_node_metric_dict = icmp_metric.to_dict("records")
+            #Step 4.3 Put your metric dict for node level here in this format node_df[node][owner_tag] = metric_dict 
+            #node_df[node]['icmp_metric'] = icmp_node_metric_dict
+            pass
+
 
         queueloss_metrics = calculate_queue_loss(df_all_meta_packets)
         queueloss_metric_dict = queueloss_metrics.to_dict("records")
-        network_df['queueloss_metric'] = icmp_metric_dict
+        network_df['queueloss_metric'] = queueloss_metric_dict
+        #Step 4 - Calculate metric for specific node
+        for node in range(2,8):
+            #TODO: change to dynamic node
+            #Step 4.1 calculate metric for a specific node
+            #queueloss_metrics = calculate_queue_loss(df_all_meta_packets, node=node)
+            #Step 4.2 Convert calculated metric to dict
+            #queueloss_metric_dict = queueloss_metrics.to_dict("records")
+            #Step 4.3 Put your metric dict for node level here in this format node_df[node][owner_tag] = metric_dict 
+            #node_df[node]['queueloss_metric'] = queueloss_metric_dict
+            pass
 
         # Step 1 - using all historical packets (df_all_packets) - calculate your metrics and return a dataframe
         energy_cons_metric = calculate_energy_cons_metrics(df_all_meta_packets)
@@ -194,6 +250,7 @@ def meta_metric_scheduler():
         # Step 3 - pass your dictionary data into the on_packet_data_update to send it to the front-end
         network_df['energy_cons_metric'] = energy_metric_dict
 
+        #Step 4 - Calculate metric for specific node
         for node in range(2,8):
             #TODO: change to dynamic node
             #Put your metric dict for node level here in below format
@@ -201,6 +258,14 @@ def meta_metric_scheduler():
             node_df[node]["icmp_metric"] = icmp_metric_dict 
             node_df[node]["queueloss_metric"] = queueloss_metric_dict
             node_df[node]["energy_cons_metric"] = energy_metric_dict
+            #Step 4.1 calculate metric for a specific node
+            #energy_cons_node_metric = calculate_energy_cons_metrics(df_all_meta_packets, node=node)
+            #Step 4.2 Convert calculated metric to dict
+            # energy_node_metric_dict = energy_cons_node_metric.to_dict("records")
+            #Step 4.3 Put your metric dict for node level here in this format node_df[node][owner_tag] = metric_dict 
+            #node_df[node]['energy_cons_metric'] = energy_node_metric_dict 
+            pass
+
         
         """ ########### Place calcs above here ########### """
 

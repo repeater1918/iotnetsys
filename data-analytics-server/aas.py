@@ -34,6 +34,7 @@ FRONT_END_URL = "http://127.0.0.1:8050/data-update"
 
 # Connect to local mongo instance and define starting db = iotnetsys
 client = Database(database_name="iotnetsys")
+node_collection_names = client.get_node_collection_names()
 
 # Start FASTAPI server
 app = FastAPI()
@@ -47,11 +48,13 @@ global packet_stream, meta_stream
 packet_stream = PacketStream(packet_update_limit=100)
 meta_stream = MetaStream(packet_update_limit=8)
 global last_packet_id, last_meta_id
-last_packet_id = last_meta_id = None
-last_packet_ids = []
+last_meta_id = None
+last_packet_id = {}
+
 global network_df,node_df 
 network_df = {} #this is storing dataframe for network level metric in format {"owner_metric": metric_dict}, example: {"pdr_metric": data}
 node_df = defaultdict(dict) #this is storing dataframe for node level metric in format {"nodeid": {"owner_metric": metric_dict}}, example: {"1": {"pdr_metric": data}}
+
 
 # Events (bools) to help prevent race conditions between metric and db watchers
 is_updating_packet = threading.Event()
@@ -93,7 +96,7 @@ def packet_metric_scheduler():
 
         # This dataframe represents all historical packets
         df_all_packets = packet_stream.flush_stream().copy(deep=True)
-        
+
 
         """ ########### Place calcs below here ########### """
 
@@ -220,22 +223,28 @@ def watch_packetlogs() -> None:
         # Notify threads data update is active
         is_updating_packet.set()
 
-        # Query 1: Check the packetlog collection and get new document starting from last result
-        data, id_max = client.find_by_pagination(
-                collection_name="packetlogs", last_id=last_packet_id, page_size=100
+        # Query 1: Check the packetlogs for each node collection and get new document starting from last result
+        data_list = []
+        for name in node_collection_names:
+            data, id_max = client.find_by_pagination(
+                collection_name=name, last_id=last_packet_id.get(name), page_size=10
             )
-        
-        if data is None:
+            data_list.append(data)
+            last_packet_id[name] = id_max
+
+        # Exclude None results
+        data_list = [item for item in data_list if item != None]
+
+        if len(data_list) == 0:
             # print("WatchPcktLogs: no new packet logs in DB, putting watcher to sleep")
             is_updating_packet.clear()
             time.sleep(15)
             continue
 
+        # Unwrap list of list node resuls
+        data = [node for lst in data_list for node in lst] 
         # Update the packet stream with new data
         packet_stream.append_stream(data)
-        # Remember the latest document received for next query
-        last_packet_id = id_max
-        #print(data)
         # Notify threads data update is active
         is_updating_packet.clear()
         # print(

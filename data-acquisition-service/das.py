@@ -20,14 +20,14 @@ from dotenv import load_dotenv
 dotenv_path = Path(Path(__file__).parent.resolve(), "../.envs/mongodb.env")
 load_dotenv(dotenv_path=dotenv_path)
 
-import os
 import subprocess
 import time
 from datetime import datetime
 
 import psutil
 from database.mongodb import Database
-from models import MetaLog, PacketLog, parse_incoming
+from models import parse_incoming
+from utils import get_collection_name
 
 dotenv_path = Path(Path(__file__).parent.resolve(), "../.envs/mongodb.env")
 load_dotenv(dotenv_path=dotenv_path)
@@ -77,14 +77,10 @@ while not proc.poll():
         # Delegate object identification to models / inheritance
         log = parse_incoming(data, START_TIMESTAMP)
         # if packet log collection = 'packetlogs' else 'metalogs' -> send to mongoDB
-        collection = (
-            client.get_collection("metalogs")
-            if isinstance(log, MetaLog)
-            else client.get_collection("packetlogs")
-        )
+        collection = client.get_collection(get_collection_name(log)) 
         _id = collection.insert_one(log.to_dict()).inserted_id
 
-        print(_id, log)
+        print(_id, log, get_collection_name(log))
 
     elif response == "":
         # Sad path or closure

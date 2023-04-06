@@ -13,6 +13,10 @@ class Database:
 
     def get_collection(self, collection_name):
         return self.database[collection_name]
+    
+    def get_node_collection_names(self) -> List[str]:
+        names = [tbl for tbl in self.database.list_collection_names() if tbl[:4] == 'node']
+        return names
 
     def insert_one(self, collection_name, document):
         collection = self.get_collection(collection_name)

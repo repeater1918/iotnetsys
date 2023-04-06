@@ -38,9 +38,12 @@ class PacketStream(object):
 
     def _move_packets_to_df_packet_hist(self) -> None:
         """Move the raw packet stream (list) to dataframe history"""
-        self.df_packet_hist = self.df_packet_hist.append(self.stream).reset_index(
-            drop=True
+        self.df_packet_hist = pd.concat(
+            [pd.DataFrame(self.stream), self.df_packet_hist]
         )
+        self.df_packet_hist = self.df_packet_hist.sort_values(
+            "timestamp", ascending=True
+        ).reset_index(drop=True)
 
     def _prepare_data_types(self) -> None:
         """Converts to correct datatypes"""

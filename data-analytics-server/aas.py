@@ -26,7 +26,8 @@ from collections import defaultdict
 import requests, json
 from database.mongodb import Database
 from fastapi import FastAPI
-from models import MetaStream, PacketStream, calculate_pdr_metrics, calculate_icmp_metrics, calculate_received_metrics, calculate_queue_loss, \
+from models import MetaStream, PacketStream, calculate_pdr_metrics, calculate_icmp_metrics, \
+    calculate_parent_change_ntwk_metrics, calculate_parent_change_node_metrics, calculate_received_metrics, calculate_queue_loss, \
 calculate_energy_cons_metrics
 from models.e2e_delay import calculate_end_to_end_delay
 from models.dead_loss import calculate_dead_loss
@@ -145,7 +146,7 @@ def packet_metric_scheduler():
         deadloss_dict = deadloss_metric.to_dict("records")
         # adding a label to data so when it reaches the front end we know who it belongs to
         network_df['deadloss_metric'] = deadloss_dict 
-        # pass dictionary data into the on_packet_data_update to send it to the front-end
+
         #Step 4 - Calculate metric for specific node
         for node in range(2,8):
             #TODO: change to dynamic node
@@ -161,7 +162,6 @@ def packet_metric_scheduler():
         received_metric_dict = received_metrics.to_dict("records")
         network_df['received_metric'] = received_metric_dict 
 
-        #Step 4 - Calculate metric for specific node
         for node in range(2,8):
 
             #Step 4.1 calculate metric for a specific node
@@ -170,6 +170,25 @@ def packet_metric_scheduler():
             #received_node_metrics_dict = received_node_metrics.to_dict("records")
             #Step 4.3 Put your metric dict for node level here in this format node_df[node][owner_tag] = metric_dict 
             #node_df[node]['received_metric'] = received_node_metrics_dict
+            pass
+
+        pc_metric_network_int = calculate_parent_change_ntwk_metrics(df_all_packets, timeframe=60000, bins=10)
+        pc_metric_node = calculate_parent_change_node_metrics(df_all_packets, timeframe=60000, bins=10) #pc_metric is not working, with 0 in values ..
+        network_df["pc_metric_network"] = pc_metric_network_int
+
+        # Step 2 - when you have the result convert your dataframe to a dictionary so it can be sent as json
+        pc_metric_node_dict = pc_metric_node.to_dict("records")
+           
+        #Step 4 - Calculate metric for specific node
+        for node in range(2,8):
+
+            #Step 4.1 calculate metric for a specific node
+            #pc_node_metrics = calculate_parent_change_node_metrics(df_all_packets, timeframe=60000, bins=10, node=node)
+            #Step 4.2 Convert calculated metric to dict
+            #pc_node_metrics_dict = pc_node_metrics.to_dict("records")
+            #Step 4.3 Put your metric dict for node level here in this format node_df[node][owner_tag] = metric_dict 
+            #node_df[node]['pc_metric_node'] = pc_node_metrics_dict
+
             pass
 
 

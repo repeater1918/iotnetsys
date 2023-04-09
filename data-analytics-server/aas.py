@@ -102,26 +102,18 @@ def packet_metric_scheduler():
 
         """ ########### Place calcs below here ########### """
 
-        # Step 1 - using all historical packets (df_all_packets) - calculate your metrics and return a dataframe
-        pdr_metric = calculate_pdr_metrics(copy.deepcopy(df_all_packets), timeframe=60000, bins=10)
-        
-        # Step 2 - when you have the result convert your dataframe to a dictionary so it can be sent as json
-        pdr_metric_dict = pdr_metric.to_dict("records")
+        # Step 1 + 2 - using all historical packets (df_all_packets) - calculate your metrics and return a dataframe
+        pdr_metric_dict, pdr_node_metric_dict = calculate_pdr_metrics(copy.deepcopy(df_all_packets), timeframe=60000, bins=10)
         
         # Step 3 - add a label to your data so when it reaches the front end we know who it belongs to
         network_df['pdr_metric'] = pdr_metric_dict 
 
         #Step 4 - Calculate metric for specific node
-        for node in range(2,8):
-            #TODO: change to dynamic node
-            #Step 4.1 calculate metric for a specific node
-            #pdr_node_metric = calculate_pdr_metrics(df_all_meta_packets, node=node)
-            #Step 4.2 Convert calculated metric to dict
-            #pdr_node_metric_dict = pdr_metric.to_dict("records")
-            #Step 4.3 Put your metric dict for node level here in this format node_df[node][owner_tag] = metric_dict 
-            #node_df[node]['pdr_metric'] = pdr_node_metric_dict
-            pass
+        for node, data in pdr_node_metric_dict.items():
+            node_df[node]['pdr_metric'] = data
+            
 
+        breakpoint()
         # Nwe - to calculate end-to-end delay
         e2e_metric = calculate_end_to_end_delay(copy.deepcopy(df_all_packets), timeframe=60000, bins=10)
         # convert dataframe to a dictionary so it can be sent as json

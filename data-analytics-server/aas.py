@@ -122,22 +122,15 @@ def packet_metric_scheduler():
             #node_df[node]['pdr_metric'] = pdr_node_metric_dict
             pass
 
-        # Nwe - to calculate end-to-end delay
-        e2e_metric = calculate_end_to_end_delay(copy.deepcopy(df_all_packets), timeframe=60000, bins=10)
-        # convert dataframe to a dictionary so it can be sent as json
+        # Nwe - to calculate end-to-end delay (network level)
+        e2e_metric = calculate_end_to_end_delay(copy.deepcopy(df_all_packets), timeframe=60000, bins=10,nodeID=-1)
         e2e_dict = e2e_metric.to_dict("records")
-        # adding a label to data so when it reaches the front end we know who it belongs to
         network_df['e2e_metric'] = e2e_dict
-        # pass dictionary data into the on_packet_data_update to send it to the front-end
-        #Step 4 - Calculate metric for specific node
+        # Nwe - to calculate end-to-end delay (node level)
         for node in range(2,8):
-            #TODO: change to dynamic node
-            #Step 4.1 calculate metric for a specific node
-            #e2e_node_metric = calculate_end_to_end_delay(df_all_meta_packets, node=node)
-            #Step 4.2 Convert calculated metric to dict
-            #e2e_node_metric_dict = e2e_metric.to_dict("records")
-            #Step 4.3 Put your metric dict for node level here in this format node_df[node][owner_tag] = metric_dict 
-            #node_df[node]['e2e_metric'] = e2e_node_metric_dict
+            e2e_node_metric = calculate_end_to_end_delay(copy.deepcopy(df_all_packets), timeframe=60000, bins=10,nodeID=node)
+            e2e_node_metric_dict = e2e_node_metric.to_dict("records")
+            node_df[node]['e2e_metric'] = e2e_node_metric_dict
             pass
 
         # Nwe - to calculate dead loss

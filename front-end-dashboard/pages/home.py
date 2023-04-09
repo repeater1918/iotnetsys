@@ -97,7 +97,7 @@ def data_scheduler(n_intervals, pathname):
             title="Number of received packets",
             labels={"env_timestamp": "Time Invervals", "total_packets": "Number of packets"},
         )
-        # Nwe - for end to end delay
+    # Nwe - for end to end delay
     df_e2e = pd.DataFrame(api_data['e2e_metric'])
     if len(api_data['e2e_metric']) == 0:
         e2e_graph = px.line(title="Average End to End Delay")

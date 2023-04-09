@@ -13,7 +13,7 @@ def calculate_dead_loss(df: pd.DataFrame, timeframe: int, bins: int) -> pd.DataF
         boundaries.append(start_point + (i * bin_size))
     
     df['bins'] = pd.cut(df['timestamp'], bins=boundaries)
-    # calculate network metrics based on timeframe and bins (how far back)
+    # calculate network metrics based on timeframe and bins
     network_metric = _calculate_metrics(df,timeframe)
 
     return network_metric
@@ -33,7 +33,7 @@ def _calculate_metrics(df: pd.DataFrame,timeframe:int) -> pd.DataFrame:
     df_send=pd.merge(df_send_raw[["packet_id","send_ts","env_timestamp","date","bins"]],df_recv_raw[["packet_id","recv_ts","date"]], on=['packet_id','date'], how='left')
     # calculate delay
     df_send['delay'] = df_send['recv_ts']-df_send['send_ts']
-    # check dealline loss or not
+    # check deadline loss or not
     df_send['deadloss'] = np.where((df_send['delay'] > timeframe), 1, 0)
     network_metric = df_send.groupby('bins').agg({'deadloss': sum, 'packet_id': 'count', 'env_timestamp': max}).rename(columns={'deadloss': 'total_deadloss','packet_id': 'total_send_packets'})  
     # calculate deadline loss percent

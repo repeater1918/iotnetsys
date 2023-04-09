@@ -103,8 +103,11 @@ for index in range(2,8):
                 title="Number of received packets",
                 labels={"env_timestamp": "Time Invervals", "total_packets": "Number of packets"},
             )
-            # Nwe - for end to end delay
+        
+        # Nwe - for end to end delay
         df_e2e = pd.DataFrame(api_data['e2e_metric'])
+        # global node_df
+        # df_e2e = pd.DataFrame(node_df[nodeid]['e2e_metric'])
         if len(api_data['e2e_metric']) == 0:
             e2e_graph = px.line(title="Average End to End Delay")
         else:
@@ -116,7 +119,6 @@ for index in range(2,8):
                 title="Average End to End Delay",
                 labels={"env_timestamp": "Time Invervals", "average_delay": "Milli-Seconds"},
             )
-            #e2e_graph.update_traces(marker_color="green")
             e2e_graph.update_traces(line_color='blue')
 
         # Nwe - for deadloss
@@ -132,7 +134,6 @@ for index in range(2,8):
                 labels={"env_timestamp": "Time Invervals", "deadloss_percent": "Deadline Loss Packets %"},
                 
             )
-            #deadloss_graph.update_traces(marker_color="green")
             deadloss_graph.update_traces(line_color='blue')
 
         df_queueloss = pd.DataFrame(api_data['queueloss_metric'])

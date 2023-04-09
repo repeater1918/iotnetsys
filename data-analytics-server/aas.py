@@ -113,7 +113,6 @@ def packet_metric_scheduler():
             node_df[node]['pdr_metric'] = data
             
 
-        breakpoint()
         # Nwe - to calculate end-to-end delay
         e2e_metric = calculate_end_to_end_delay(copy.deepcopy(df_all_packets), timeframe=60000, bins=10)
         # convert dataframe to a dictionary so it can be sent as json

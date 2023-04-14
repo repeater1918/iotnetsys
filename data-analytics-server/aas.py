@@ -17,6 +17,7 @@ dotenv_path = Path(Path(__file__).parent.resolve(), "../.envs/mongodb.env")
 load_dotenv(dotenv_path=dotenv_path)
 
 import os
+import pandas as pd
 import threading
 import time
 from datetime import datetime
@@ -165,11 +166,14 @@ def packet_metric_scheduler():
         for node in range(2,8):
 
             #Step 4.1 calculate metric for a specific node
-            #received_node_metrics = calculate_received_metrics(df_all_meta_packets, node=node)
+            #df = df_all_packets.loc[df_all_packets['node'] == node].copy()
+            #breakpoint()
+            #received_node_metrics = calculate_received_metrics(df, timeframe=500, bins=2)
+            
             #Step 4.2 Convert calculated metric to dict
             #received_node_metrics_dict = received_node_metrics.to_dict("records")
             #Step 4.3 Put your metric dict for node level here in this format node_df[node][owner_tag] = metric_dict 
-            #node_df[node]['received_metric'] = received_node_metrics_dict
+            #node_df[node]['received_metric_node'] = received_node_metrics_dict
             pass
 
 
@@ -237,12 +241,13 @@ def meta_metric_scheduler():
         for node in range(2,8):
             #TODO: change to dynamic node
             #Step 4.1 calculate metric for a specific node
-            #queueloss_metrics = calculate_queue_loss(df_all_meta_packets, node=node)
+            queue_node = df_all_meta_packets.loc[df_all_meta_packets['node'] == node].copy()
+            queueloss_metrics_node = calculate_queue_loss(queue_node)
             #Step 4.2 Convert calculated metric to dict
-            #queueloss_metric_dict = queueloss_metrics.to_dict("records")
+            queueloss_metric_dict_node = queueloss_metrics_node.to_dict("records")
             #Step 4.3 Put your metric dict for node level here in this format node_df[node][owner_tag] = metric_dict 
-            #node_df[node]['queueloss_metric'] = queueloss_metric_dict
-            pass
+            node_df[node]['queueloss_metric'] = queueloss_metric_dict_node
+            #breakpoint()
 
         # Step 1 - using all historical packets (df_all_packets) - calculate your metrics and return a dataframe
         energy_cons_metric = calculate_energy_cons_metrics(copy.deepcopy(df_all_meta_packets))

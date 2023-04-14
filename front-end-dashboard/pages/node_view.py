@@ -101,6 +101,8 @@ for index in range(2,8):
                 title="Number of received packets",
                 labels={"env_timestamp": "Time Invervals", "total_packets": "Number of packets"},
             )
+        received_graph.update_traces(line_color='blue')
+
             # Nwe - for end to end delay
         df_e2e = pd.DataFrame(api_data['e2e_metric'])
         if len(api_data['e2e_metric']) == 0:
@@ -144,7 +146,8 @@ for index in range(2,8):
                 title="Queue loss",
                 labels={"node": "Node ID", "sub_type_value": "Number of dropped packets"},
             )
-        #nomin  
+        queueloss_graph.update_traces(marker_color='blue')
+          
         df_energy = pd.DataFrame(api_data['energy_cons_metric'])
         if len(api_data['energy_cons_metric']) == 0:
             graph_duty_cycle = px.bar(title="Energy Level")
@@ -169,5 +172,3 @@ for index in range(2,8):
                 )
 
         return (received_graph, queueloss_graph, e2e_graph,deadloss_graph,graph_duty_cycle, pdr_graph, icmp_graph)
-
-

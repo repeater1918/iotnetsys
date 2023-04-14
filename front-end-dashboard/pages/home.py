@@ -97,6 +97,8 @@ def data_scheduler(n_intervals, pathname):
             title="Number of received packets",
             labels={"env_timestamp": "Time Invervals", "total_packets": "Number of packets"},
         )
+    received_graph.update_traces(line_color='blue')
+    
         # Nwe - for end to end delay
     df_e2e = pd.DataFrame(api_data['e2e_metric'])
     if len(api_data['e2e_metric']) == 0:
@@ -140,7 +142,8 @@ def data_scheduler(n_intervals, pathname):
             title="Queue loss",
             labels={"node": "Node ID", "sub_type_value": "Number of dropped packets"},
         )
-    #nomin  
+    queueloss_graph.update_traces(marker_color='blue')  
+    
     df_energy = pd.DataFrame(api_data['energy_cons_metric'])
     if len(api_data['energy_cons_metric']) == 0:
         graph_duty_cycle = px.bar(title="Energy Level")

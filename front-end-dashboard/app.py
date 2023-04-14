@@ -11,8 +11,6 @@ import dash_bootstrap_components as dbc
 import dash_bootstrap_templates as dbt
 import flask
 import pandas as pd
-import plotly.graph_objects as go
-from utils.data_connectors import get_network_data
 
 server = flask.Flask(__name__)
 app = dash.Dash(
@@ -28,11 +26,14 @@ UPDATE_INTERVAL = 5 * 1000 # check for a data update every 5 seconds
 import json
 from datetime import datetime
 
-import plotly.express as px
 from dash import Input, Output, State, dcc, html, ctx
 from dash_bootstrap_components._components.Container import Container
 from flask import request
 from components.navigation import navbar, nav_drawer, top_page_heading
+
+# declare global variables that will be updated by AAS
+global df_pdr, df_icmp
+df_pdr = df_icmp = None
 
 dbt.load_figure_template("DARKLY")
 
@@ -86,7 +87,8 @@ def load_heading(pathname):
               Input('url', 'pathname'))
 def update_session_storage(pathname):
     session_data = {'update-interval': UPDATE_INTERVAL}
-    return session_data
+
+
 
 
 if __name__ == "__main__":

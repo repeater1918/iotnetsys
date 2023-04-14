@@ -21,7 +21,8 @@ def layout(nodeid):
     graph_duty_cycle = dcc.Graph(id=f"graph_duty_cycle-{nodeid}")
     graph_e2e_metric = dcc.Graph(id=f"graph-e2e-{nodeid}", figure=px.bar(title="Average End to End Delay"))
     graph_deadloss_metric = dcc.Graph(id=f"graph-deadloss-{nodeid}", figure=px.bar(title="Deadline Loss Percentage"))
-    graph_dummy_metric = dcc.Graph(id=f"graph-dummy-{nodeid}", figure=px.bar(title="An empty graph"))
+    graph_pc_node_metric = dcc.Graph(id=f"graph-pc-{nodeid}", figure = px.bar(title="Parent Changes per Node"))
+
     return html.Div(
     children=[
         dcc.Interval(
@@ -39,7 +40,7 @@ def layout(nodeid):
                 dbc.Col(graph_icmp_metric, md=6, style={"margin-top": "16px"}),
             ]),
         dbc.Row([
-                dbc.Col(graph_dummy_metric, md=8, style={"margin-top": "16px"}),
+                dbc.Col(graph_pc_node_metric, md=8, style={"margin-top": "16px"}),
                 dbc.Col(graph_duty_cycle, md=4, style={"margin-top": "16px"}),
                 ]) 
         
@@ -55,6 +56,7 @@ for index in range(2,8):
     Output(f"graph_duty_cycle-{index}", "figure"),
     Output(f"graph-pdr-{index}", "figure"),
     Output(f"graph-icmp-{index}", "figure"),
+    Output(f"graph-pc-{index}", "figure"),
     [Input("interval-component", "n_intervals"),
       Input('url', 'pathname')])
     def update_graph(n, pathname):
@@ -171,4 +173,18 @@ for index in range(2,8):
                     layout={"plot_bgcolor": "#222", "paper_bgcolor": "#222"},
                 )
 
-        return (received_graph, queueloss_graph, e2e_graph,deadloss_graph,graph_duty_cycle, pdr_graph, icmp_graph)
+        df_pc_node = pd.DataFrame(api_data['pc_metric_node'])
+        if len(api_data['pc_metric_node']) == 0:
+            pc_node_graph = px.bar(title="Parent Changes per Node")
+        else:
+            pc_node_graph = px.bar(
+
+                df_pc_node,
+                x="node",
+                y="parent_changes",
+                title="Parent Changes per Node",
+                labels={"node": "Node ID", "parent_changes": "Total Parent Changes"},
+            )
+            pc_node_graph.update_traces(marker_color="blue")
+
+        return (received_graph, queueloss_graph, e2e_graph,deadloss_graph,graph_duty_cycle, pdr_graph, icmp_graph, pc_node_graph)

@@ -64,12 +64,11 @@ def _calculate_node_metrics(df: pd.DataFrame) -> pd.DataFrame:
 
     node_metric['env_timestamp'] = node_metric['env_timestamp'].dt.strftime("%H:%M:%S").astype(str)
     node_metric['bins'] = node_metric.reset_index()['bins'].apply(bin_label)
-    node_metric = node_metric.dropna()
 
     # target = {"1": {"pdr_metric": data}}
     result = {}
     for node in node_metric['node'].unique():
-        result[node] = node_metric.loc[node_metric['node'] == node].to_dict('records')
+        result[node] = {"pdr_metric": node_metric.loc[node_metric['node'] == node].to_dict('records')}
 
     return result
 

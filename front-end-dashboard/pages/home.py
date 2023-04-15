@@ -7,8 +7,6 @@ import dash_bootstrap_components as dbc
 from views.graph_duty_cycle import graph_duty_cycle
 import plotly.graph_objects as go
 from views.network_topology import topo_graph
-from views.graph_icmp_packets import get_icmp_graph
-from views.graph_pdr import get_pdr_graph
 import pandas as pd
 from utils.data_connectors import get_network_data
 
@@ -18,6 +16,8 @@ dbt.load_figure_template("DARKLY")
 
 dash.register_page(__name__, path="/")
 
+graph_pdr_metric = dcc.Graph(id="graph-pdr", figure=px.bar(title="Percentage Packet Loss"))
+graph_icmp_metric = dcc.Graph(id="graph-icmp", figure=px.bar(title="ICMP Packets"))
 graph_received_metric = dcc.Graph(id="graph-received", figure=px.line(title="Number of received packets"))
 graph_queue_loss = dcc.Graph(id="graph-queueloss", figure=px.bar(title="Queue loss"))
 graph_duty_cycle = dcc.Graph(id="graph_duty_cycle")
@@ -32,8 +32,8 @@ layout = html.Div(
                 dbc.Col(graph_queue_loss, md=6, style={"margin-top": "16px"}),
                 dbc.Col(graph_e2e_metric, md=6, style={"margin-top": "16px"}),
                 dbc.Col(graph_deadloss_metric, md=6, style={"margin-top": "16px"}),
-                dbc.Col(get_pdr_graph(is_init=True), md=6, style={"margin-top": "16px"}),
-                dbc.Col(get_icmp_graph(is_init=True), md=6, style={"margin-top": "16px"}),
+                dbc.Col(graph_pdr_metric, md=6, style={"margin-top": "16px"}),
+                dbc.Col(graph_icmp_metric, md=6, style={"margin-top": "16px"}),
 
             ]),
         dbc.Row([
@@ -58,19 +58,32 @@ def data_scheduler(n_intervals, pathname):
     api_data  = get_network_data()
     if pathname == '/':
         # If data hasn't been udpate for my graph return an empty graph
-        #Using result from API directly
+        #Using result from API directly      
         df_pdr = pd.DataFrame(api_data['pdr_metric'])
         if len(api_data['pdr_metric']) == 0:
-            pdr_graph = get_pdr_graph(is_empty=True)
+            pdr_graph = px.line(title="Percentage Packet Loss")
         else:      
-            pdr_graph = get_pdr_graph(df_pdr)
-    
+            pdr_graph = px.line(
+                df_pdr,
+                x="env_timestamp",
+                y=["failed_packets_precentage", "successful_packets_precentage"],
+                color_discrete_sequence=["red", "blue"],
+                title="Packet Delivery Ratios",
+                labels={"env_timestamp": "Time Invervals", "value": "Percentage"},
+            )
+
     df_icmp = pd.DataFrame(api_data['icmp_metric'])
     if len(api_data['icmp_metric']) == 0:
-        icmp_graph = get_icmp_graph(is_empty=True)
+        icmp_graph = px.bar(title="ICMP Packets")
     else:
-        icmp_graph = get_icmp_graph(df_icmp)
-        
+        icmp_graph = px.bar(
+            df_icmp,
+            x="node",
+            y="sub_type_value",
+            title="ICMP Packets",
+            labels={"node": "Node ID", "sub_type_value": "Total ICMP Packets"},
+        )
+        icmp_graph.update_traces(marker_color="green")
     #nomin
 
     df_received = pd.DataFrame(api_data['received_metric'])

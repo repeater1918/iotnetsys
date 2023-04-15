@@ -21,7 +21,7 @@ app = dash.Dash(
     suppress_callback_exceptions=True,
 )
 
-UPDATE_INTERVAL = 5 * 1000 # check for a data update every 5 seconds
+UPDATE_INTERVAL = 5 * 1000 * 1000# check for a data update every 5 seconds
 
 import json
 from datetime import datetime

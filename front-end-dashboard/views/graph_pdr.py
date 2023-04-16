@@ -3,11 +3,6 @@ from dash import dcc, html
 import plotly.graph_objects as go
 from pandas import DataFrame
 
-import dash_bootstrap_templates as dbt
-
-
-dbt.load_figure_template("DARKLY")
-
 
 def get_pdr_graph(data = None, is_init=False, node_id=False, is_empty=False):
 

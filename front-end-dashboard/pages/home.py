@@ -14,8 +14,6 @@ from utils.data_connectors import get_network_data
 
 # from app import server
 
-dbt.load_figure_template("DARKLY")
-
 dash.register_page(__name__, path="/")
 
 graph_received_metric = dcc.Graph(id="graph-received", figure=px.line(title="Number of received packets"))
@@ -57,13 +55,14 @@ layout = html.Div(
 def data_scheduler(n_intervals, pathname):
     api_data  = get_network_data()
     if pathname == '/':
+        pass
         # If data hasn't been udpate for my graph return an empty graph
         #Using result from API directly
-        df_pdr = pd.DataFrame(api_data['pdr_metric'])
-        if len(api_data['pdr_metric']) == 0:
-            pdr_graph = get_pdr_graph(is_empty=True)
-        else:      
-            pdr_graph = get_pdr_graph(df_pdr)
+    df_pdr = pd.DataFrame(api_data['pdr_metric'])
+    if len(api_data['pdr_metric']) == 0:
+        pdr_graph = get_pdr_graph(is_empty=True)
+    else:      
+        pdr_graph = get_pdr_graph(df_pdr)
     
     df_icmp = pd.DataFrame(api_data['icmp_metric'])
     if len(api_data['icmp_metric']) == 0:
@@ -139,7 +138,7 @@ def data_scheduler(n_intervals, pathname):
                 go.Indicator(
                     mode="gauge+number+delta",
                     value=df_energy.loc[0,"energy_cons"],
-                    
+
                     domain={"x": [0, 1], "y": [0, 1]},
                     delta={"reference": 100},
                     title={"text": "Energy Level"},

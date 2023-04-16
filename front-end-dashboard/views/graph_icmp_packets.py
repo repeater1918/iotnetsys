@@ -1,12 +1,6 @@
 import plotly.express as px
 from dash import dcc, html
 
-import dash_bootstrap_templates as dbt
-
-
-dbt.load_figure_template("DARKLY")
-
-
 def get_icmp_graph(data = None, is_init=False, node_id=False, is_empty=False):
 
     if is_init:

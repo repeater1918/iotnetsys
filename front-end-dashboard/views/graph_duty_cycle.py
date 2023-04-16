@@ -1,10 +1,6 @@
 import plotly.graph_objects as go
 from dash import dcc, html
 
-import dash_bootstrap_templates as dbt
-
-
-dbt.load_figure_template("DARKLY")
 
 #global df_energy
 df_energy = None

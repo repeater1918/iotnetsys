@@ -150,22 +150,13 @@ def packet_metric_scheduler():
             #node_df[node]['deadloss_metric'] = deadloss_node_metric_dict
             pass
 
-        received_metrics = calculate_received_metrics(copy.deepcopy(df_all_packets), timeframe=60000, bins=10)
-        received_metric_dict = received_metrics.to_dict("records")
-        network_df['received_metric'] = received_metric_dict 
-
-        for node in range(2,8):
-
-            #Step 4.1 calculate metric for a specific node
-            #df = df_all_packets.loc[df_all_packets['node'] == node].copy()
-            #breakpoint()
-            #received_node_metrics = calculate_received_metrics(df, timeframe=500, bins=2)
-            
-            #Step 4.2 Convert calculated metric to dict
-            #received_node_metrics_dict = received_node_metrics.to_dict("records")
-            #Step 4.3 Put your metric dict for node level here in this format node_df[node][owner_tag] = metric_dict 
-            #node_df[node]['received_metric_node'] = received_node_metrics_dict
-            pass
+        #calculate number of received packets
+        received_metrics, received_metrics_node = calculate_received_metrics(copy.deepcopy(df_all_packets), timeframe=60000, bins=10)
+        #for network
+        network_df['received_metric'] = received_metrics 
+        #for nodes
+        for node, data in received_metrics_node.items():
+            node_df[node]['received_metric'] = data
 
         pc_metric_network_int = calculate_parent_change_ntwk_metrics(df_all_packets, timeframe=60000, bins=10)
         pc_metric_node = calculate_parent_change_node_metrics(df_all_packets, timeframe=60000, bins=10) #pc_metric is not working, with 0 in values ..
@@ -235,21 +226,13 @@ def meta_metric_scheduler():
         for node, data in node_icmp_metric.items():
             node_df[node]['icmp_metric'] = data
    
-
-        queueloss_metrics = calculate_queue_loss(copy.deepcopy(df_all_meta_packets))
-        queueloss_metric_dict = queueloss_metrics.to_dict("records")
-        network_df['queueloss_metric'] = queueloss_metric_dict
-        #Step 4 - Calculate metric for specific node
-        for node in range(2,8):
-            #TODO: change to dynamic node
-            #Step 4.1 calculate metric for a specific node
-            queue_node = df_all_meta_packets.loc[df_all_meta_packets['node'] == node].copy()
-            queueloss_metrics_node = calculate_queue_loss(queue_node)
-            #Step 4.2 Convert calculated metric to dict
-            queueloss_metric_dict_node = queueloss_metrics_node.to_dict("records")
-            #Step 4.3 Put your metric dict for node level here in this format node_df[node][owner_tag] = metric_dict 
-            node_df[node]['queueloss_metric'] = queueloss_metric_dict_node
-            #breakpoint()
+        #calculate queue loss
+        queueloss_network, queueloss_node = calculate_queue_loss(copy.deepcopy(df_all_meta_packets))
+        #for network
+        network_df['queueloss_metric'] = queueloss_network
+        #for each node
+        for node, data in queueloss_node.items():
+            node_df[node]['queueloss_metric'] = data
 
         # Step 1 - using all historical packets (df_all_packets) - calculate your metrics and return a dataframe
         energy_cons_metric = calculate_energy_cons_metrics(copy.deepcopy(df_all_meta_packets))
@@ -263,7 +246,6 @@ def meta_metric_scheduler():
             #TODO: change to dynamic node
             #Put your metric dict for node level here in below format
             #node_df[nodeid][owner_tag] = metric_dict (Example: nodedf[2]['pdr_metric'] = node2_pdr_metric_dict) 
-            node_df[node]["queueloss_metric"] = queueloss_metric_dict
             node_df[node]["energy_cons_metric"] = energy_metric_dict
             #Step 4.1 calculate metric for a specific node
             #energy_cons_node_metric = calculate_energy_cons_metrics(df_all_meta_packets, node=node)

@@ -7,6 +7,8 @@ from views.graph_duty_cycle import graph_duty_cycle
 from views.network_topology import topo_graph
 from views.graph_icmp_packets import get_icmp_graph
 from views.graph_pdr import get_pdr_graph
+from views.graph_queue_loss import get_queueloss_graph
+from views.graph_received_packets import get_receivedpackets_graph
 from utils.data_connectors import get_node_data
 import plotly.graph_objects as go
 import pandas as pd
@@ -16,9 +18,6 @@ dash.register_page(__name__, path_template='/node_view/<nodeid>')
 
 def layout(nodeid):
     
-    graph_pdr_metric = dcc.Graph(id=f"graph-pdr-node", figure=px.bar(title="Percentage Packet Loss"))
-    graph_received_metric = dcc.Graph(id=f"graph-received-node", figure=px.line(title="Number of received packets"))
-    graph_queue_loss = dcc.Graph(id=f"graph-queueloss-node", figure=px.bar(title="Queue loss"))
     graph_duty_cycle = dcc.Graph(id=f"graph_duty_cycle-node")
     graph_e2e_metric = dcc.Graph(id=f"graph-e2e-node", figure=px.bar(title="Average End to End Delay"))
     graph_deadloss_metric = dcc.Graph(id=f"graph-deadloss-node", figure=px.bar(title="Deadline Loss Percentage"))
@@ -33,8 +32,8 @@ def layout(nodeid):
         html.P("This is the content of the node {}".format(nodeid)),
         dbc.Row(
             [
-                dbc.Col(graph_received_metric, md=6, style={"margin-top": "16px"}),
-                dbc.Col(graph_queue_loss, md=6, style={"margin-top": "16px"}),
+                dbc.Col(get_receivedpackets_graph(is_init=True, node_id=nodeid), md=6, style={"margin-top": "16px"}),
+                dbc.Col(get_queueloss_graph(is_init=True, node_id=nodeid), md=6, style={"margin-top": "16px"}),
                 dbc.Col(graph_e2e_metric, md=6, style={"margin-top": "16px"}),
                 dbc.Col(graph_deadloss_metric, md=6, style={"margin-top": "16px"}),
                 dbc.Col(get_pdr_graph(is_init=True, node_id=nodeid), md=6, style={"margin-top": "16px"}),
@@ -50,7 +49,7 @@ def layout(nodeid):
 
 #Callback
 
-@dash.callback( Output(f"graph-received-node", "figure"),
+@dash.callback( Output(f"graph-receivedpackets-node", "figure"),
 Output(f"graph-queueloss-node", "figure"),
 Output(f"graph-e2e-node", "figure"),
 Output(f"graph-deadloss-node", "figure"),
@@ -77,20 +76,18 @@ def update_graph(n, pathname):
         icmp_graph = get_icmp_graph(is_empty=True, node_id=nodeid)
     else:
         icmp_graph = get_icmp_graph(df_icmp, node_id=nodeid)
+
+    df_queueloss = pd.DataFrame(api_data['queueloss_metric'])
+    if len(api_data['queueloss_metric']) == 0:
+        queueloss_graph = get_queueloss_graph(is_empty=True, node_id=nodeid)
+    else:
+        queueloss_graph = get_queueloss_graph(df_queueloss, node_id=nodeid)
     
-    #nomin
     df_received = pd.DataFrame(api_data['received_metric'])
     if len(api_data['received_metric']) == 0:
-        received_graph = px.line(title="Number of received packets")
+        received_graph = get_receivedpackets_graph(is_empty=True, node_id=nodeid)
     else:
-        received_graph = px.line(
-            df_received,
-            x="env_timestamp",
-            y="total_packets",
-            title="Number of received packets",
-            labels={"env_timestamp": "Time Invervals", "total_packets": "Number of packets"},
-        )
-    received_graph.update_traces(line_color='blue')
+        received_graph = get_receivedpackets_graph(df_received, node_id = 1)
 
         # Nwe - for end to end delay
     df_e2e = pd.DataFrame(api_data['e2e_metric'])
@@ -124,19 +121,19 @@ def update_graph(n, pathname):
         #deadloss_graph.update_traces(marker_color="green")
         deadloss_graph.update_traces(line_color='blue')
 
-    df_queueloss = pd.DataFrame(api_data['queueloss_metric'])
-    if len(api_data['queueloss_metric']) == 0:
-        queueloss_graph = px.bar(title="Queue loss")
-    else:
-        queueloss_graph = px.bar(
-            df_queueloss,
-            x="node",
-            y="sub_type_value",
-            title="Queue loss",
-            labels={"node": "Node ID", "sub_type_value": "Number of dropped packets"},
-        )
-    queueloss_graph.update_traces(marker_color='blue')
-    queueloss_graph.update_xaxes(type='category')
+    # df_queueloss = pd.DataFrame(api_data['queueloss_metric'])
+    # if len(api_data['queueloss_metric']) == 0:
+    #     queueloss_graph = px.bar(title="Queue loss")
+    # else:
+    #     queueloss_graph = px.bar(
+    #         df_queueloss,
+    #         x="node",
+    #         y="sub_type_value",
+    #         title="Queue loss",
+    #         labels={"node": "Node ID", "sub_type_value": "Number of dropped packets"},
+    #     )
+    # queueloss_graph.update_traces(marker_color='blue')
+    # queueloss_graph.update_xaxes(type='category')
         
     df_energy = pd.DataFrame(api_data['energy_cons_metric'])
     if len(api_data['energy_cons_metric']) == 0:

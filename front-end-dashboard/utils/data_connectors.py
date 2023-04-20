@@ -1,6 +1,9 @@
 import requests
+import os
 
-AAS_URI = "http://127.0.0.1:8000/" #AAS supports networklv_data or nodelv_data
+AAS_URI = os.environ.get('AAS_URI', "http://127.0.0.1:8000/") #AAS supports networklv_data or nodelv_data
+print(f"AAS_URI -> {os.environ.get('AAS_URI', 'http://127.0.0.1:8000/')}")
+
 global supported_metrics
 supported_metrics = ["pdr_metric","icmp_metric","received_metric", "e2e_metric", "deadloss_metric", "queueloss_metric","energy_cons_metric"]
 node_supported_metrics = [*supported_metrics, "pc_metric_node"]

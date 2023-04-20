@@ -6,11 +6,14 @@ TODO:
 2. Figure out format of updates and frequency
 3. Design and implement based on 1 + 2
 """
+import os
 import dash
 import dash_bootstrap_components as dbc
 import dash_bootstrap_templates as dbt
 import flask
 import pandas as pd
+
+print(f"Running in mode -> {os.environ.get('DEPLOYMENT', 'dev')}")
 
 server = flask.Flask(__name__)
 app = dash.Dash(
@@ -35,7 +38,7 @@ from components.navigation import navbar, nav_drawer, top_page_heading
 global df_pdr, df_icmp
 df_pdr = df_icmp = None
 
-dbt.load_figure_template("DARKLY")
+dbt.load_figure_template("darkly")
 
 
 app.layout = html.Div(
@@ -92,4 +95,4 @@ def update_session_storage(pathname):
 
 
 if __name__ == "__main__":
-    app.run_server(debug=True)
+    app.run(debug=True)

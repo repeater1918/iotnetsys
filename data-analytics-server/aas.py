@@ -10,11 +10,14 @@ TODO:
 
 """
 from pathlib import Path
-
+import os
 from dotenv import load_dotenv
 
-dotenv_path = Path(Path(__file__).parent.resolve(), "../.envs/mongodb.env")
-load_dotenv(dotenv_path=dotenv_path)
+if os.environ.get('DEPLOYMENT', 'dev') == 'dev':
+    dotenv_path_dev = Path(Path(__file__).parent.resolve(), "../.envs/mongodb.env")
+    load_dotenv(dotenv_path=dotenv_path_dev)
+
+print(f"Running in mode -> {os.environ.get('DEPLOYMENT', 'dev')}")
 
 import sys
 import pandas as pd

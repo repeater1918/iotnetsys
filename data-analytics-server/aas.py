@@ -35,6 +35,7 @@ from models import MetaStream, PacketStream, calculate_pdr_metrics, calculate_ic
 calculate_energy_cons_metrics
 from models.e2e_delay import calculate_end_to_end_delay
 from models.dead_loss import calculate_dead_loss
+from models import Timeframe
 
 FRONT_END_URL = "http://127.0.0.1:8050/data-update"
 
@@ -45,6 +46,8 @@ node_collection_names = client.get_node_collection_names()
 # Start FASTAPI server
 app = FastAPI()
 
+#  time frame parameter
+global timeframe_param
 # Global reference variables to manage watchers
 global response_history
 response_history = 0
@@ -73,6 +76,12 @@ is_calculating_meta = threading.Event()
 @app.get("/")
 async def root():
     return {"network_df": sys.getsizeof(network_df), "node_df": sys.getsizeof(node_df)}
+
+@app.post("/api/timeframe")
+async def root(data: Timeframe):
+    global timeframe_param
+    timeframe_param = data.timeframe
+    print(data.timeframe)
 
 
 def packet_metric_scheduler():

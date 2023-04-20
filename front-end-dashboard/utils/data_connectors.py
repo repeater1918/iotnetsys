@@ -33,3 +33,10 @@ def get_node_data(nodeid):
         result_dict[v] = res
     #print ("Cache updated at ", datetime.now())
     return result_dict
+
+def send_timeframe(milliseconds: int):
+    result_dict = {'timeframe': milliseconds}
+    res = requests.post(AAS_URI+f"api/timeframe", json=result_dict) 
+    print(res.status_code)
+    return res
+    # TODO error management

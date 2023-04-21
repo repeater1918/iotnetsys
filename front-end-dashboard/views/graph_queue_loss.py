@@ -26,16 +26,16 @@ def get_queueloss_graph(data = None, is_init=False, node_id=False, is_empty=Fals
         #  update has occurred but not data, return a empty placeholder
         return _get_place_holder()
     
-    # if node_id:
-    #     #  data is available and a node type graph is required, render graph for a node view
-    #     queueloss_graph = px.bar(
-    #         data,
-    #         x="node",
-    #         y="sub_type_value",
-    #         labels={"node": "Node ID", "sub_type_value": "Number of dropped packets"},
-    #     )
-    #     queueloss_graph = _style_graph(queueloss_graph, data)
-    #     return queueloss_graph
+    if node_id:
+        #  data is available and a node type graph is required, render graph for a node view
+        queueloss_graph = px.bar(
+            data,
+            x="env_timestamp",
+            y="sub_type_value",
+            labels={"env_timestamp": "Time", "sub_type_value": "Number of dropped packets"},
+        )
+        queueloss_graph = _style_graph(queueloss_graph, data)
+        return queueloss_graph
     
     queueloss_graph = px.bar(
             data,

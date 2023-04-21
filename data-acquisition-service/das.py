@@ -37,7 +37,7 @@ client = Database(database_name="iotnetsys")
 
 # Instruct python to run Omid's script and pipe the results to this program
 target_script = (
-    "emitter.bat"  # NOTE: change this to emitter.sh if you are working in linux/mac
+    "emitter.sh"  # NOTE: change this to emitter.sh if you are working in linux/mac
 )
 
 proc = subprocess.Popen(

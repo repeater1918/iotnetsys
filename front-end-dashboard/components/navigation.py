@@ -51,7 +51,7 @@ navbar = dbc.Navbar(
 
 node_typology = dbc.ListGroup(children=
     [
-        dbc.ListGroupItem("Edge Server (Node 1)", className="typology-lvl1"),
+        dbc.ListGroupItem("IoT Node", className="typology-lvl1"),
         dbc.ListGroupItem("Node 2", className="typology-lvl2", href="/node_view/2"),
         dbc.ListGroupItem("Node 4", className="typology-lvl3", href="/node_view/4"),
         dbc.ListGroupItem("Node 5", className="typology-lvl3", href="/node_view/5"),

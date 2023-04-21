@@ -118,7 +118,7 @@ def data_scheduler(n_intervals, pathname):
     
     df_energy = pd.DataFrame(api_data['energy_cons_metric'])
     if len(api_data['energy_cons_metric']) == 0:
-        graph_duty_cycle = px.bar(title="Energy Level")
+        graph_duty_cycle = px.bar(title="Energy Consumption")
     else:
         graph_duty_cycle = go.Figure(
                 go.Indicator(
@@ -127,7 +127,7 @@ def data_scheduler(n_intervals, pathname):
 
                     domain={"x": [0, 1], "y": [0, 1]},
                     delta={"reference": 100},
-                    title={"text": "Energy Level"},
+                    title={"text": "Energy Consumption"},
                     gauge={
                         "axis": {"range": [None, 100]},
                         "steps": [

@@ -45,7 +45,7 @@ def get_pdr_graph(data = None, is_init=False, node_id=False, is_empty=False):
             y="successful_packets_precentage",
             title="Packet Delivery Ratios",
             markers=True,
-            labels={"env_timestamp": "Time Invervals", "successful_packets_precentage": "Successful Packet %"},
+            labels={"env_timestamp": "Time Invervals", "successful_packets_precentage": "Packet Ratio"},
         )
     pdr_graph = _style_graph(pdr_graph, data)
 

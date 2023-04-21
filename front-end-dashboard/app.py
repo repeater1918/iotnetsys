@@ -11,7 +11,7 @@ import dash
 import dash_bootstrap_components as dbc
 import dash_bootstrap_templates as dbt
 import flask
-import pandas as pd
+from utils.data_connectors import send_timeframe
 
 print(f"Running in mode -> {os.environ.get('DEPLOYMENT', 'dev')}")
 
@@ -91,6 +91,16 @@ def load_heading(pathname):
 def update_session_storage(pathname):
     session_data = {'update-interval': UPDATE_INTERVAL}
 
+#App management callbacks
+@app.callback(
+    Output("dropdown-timeframe", "required"),
+    Input("dropdown-timeframe", "value")
+)
+def set_timeframe(value):
+    if value == None:
+        send_timeframe(60000) #default 1 min
+    else:
+        send_timeframe(value)
 
 
 

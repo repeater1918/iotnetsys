@@ -65,7 +65,7 @@ timeframe_selector = html.Div(children=
     [
         dbc.Label("Timeframe"),
         dbc.Select(
-            id="select",
+            id="dropdown-timeframe",
             placeholder="15sec",
             options=[
                 {"label": "5sec", "value": "5"},

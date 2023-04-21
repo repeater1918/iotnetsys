@@ -6,8 +6,8 @@ def calculate_parent_change_ntwk_metrics(df: pd.DataFrame, timeframe: int, bins:
     For the given timeframe, return an int showing the total number of parent changes.
     """
     # get packets only within timeframe (miliseconds)
-    # get latest timestamp
-    timestamp_limit = df['timestamp'].max() - (timeframe * bins)
+    # get earliest timestamp
+    timestamp_limit = df['timestamp'].min() + (timeframe * bins)
     # filter down to relevant timeframe
     df = df[df['timestamp'] >= timestamp_limit]
 
@@ -21,8 +21,8 @@ def calculate_parent_change_node_metrics(df: pd.DataFrame, timeframe: int, bins:
     For the given timeframe, return a dataframe showing the total number of parent changes per node.
     """
     # get packets only within timeframe (miliseconds)
-    # get latest timestamp
-    timestamp_limit = df['timestamp'].max() - (timeframe * bins)
+    # get earliest timestamp
+    timestamp_limit = df['timestamp'].min() + (timeframe * bins)
     # filter down to relevant timeframe
     df = df[df['timestamp'] >= timestamp_limit]
 

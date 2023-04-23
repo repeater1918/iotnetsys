@@ -135,6 +135,7 @@ for index in range(2,8):
                 
             )
             deadloss_graph.update_traces(line_color='blue')
+            
 
         df_queueloss = pd.DataFrame(api_data['queueloss_metric'])
         if len(api_data['queueloss_metric']) == 0:

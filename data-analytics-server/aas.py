@@ -133,23 +133,17 @@ def packet_metric_scheduler():
             node_df[node]['e2e_metric'] = e2e_node_metric_dict
             pass
 
-        # Nwe - to calculate dead loss
-        deadloss_metric = calculate_dead_loss(copy.deepcopy(df_all_packets), timeframe=60000, bins=10)
-        # convert dataframe to a dictionary so it can be sent as json
+        # Nwe - to calculate dead loss (network level)
+        deadloss_metric = calculate_dead_loss(copy.deepcopy(df_all_packets), timeframe=60000, bins=10,nodeID=-1)
         deadloss_dict = deadloss_metric.to_dict("records")
-        # adding a label to data so when it reaches the front end we know who it belongs to
         network_df['deadloss_metric'] = deadloss_dict 
-
-        #Step 4 - Calculate metric for specific node
+        # Nwe - to calculate dead loss (node level)
         for node in range(2,8):
-            #TODO: change to dynamic node
-            #Step 4.1 calculate metric for a specific node
-            #deadloss_node_metric = calculate_dead_loss(df_all_meta_packets, node=node)
-            #Step 4.2 Convert calculated metric to dict
-            #deadloss_node_metric_dict = deadloss_metric.to_dict("records")
-            #Step 4.3 Put your metric dict for node level here in this format node_df[node][owner_tag] = metric_dict 
-            #node_df[node]['deadloss_metric'] = deadloss_node_metric_dict
+            deadloss_node_metric = calculate_dead_loss(copy.deepcopy(df_all_packets), timeframe=60000, bins=10,nodeID=node)
+            deadloss_node_metric_dict = deadloss_node_metric.to_dict("records")
+            node_df[node]['deadloss_metric'] = deadloss_node_metric_dict
             pass
+
 
         received_metrics = calculate_received_metrics(copy.deepcopy(df_all_packets), timeframe=60000, bins=10)
         received_metric_dict = received_metrics.to_dict("records")

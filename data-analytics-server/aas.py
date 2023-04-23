@@ -255,17 +255,11 @@ def meta_metric_scheduler():
 
         #Step 4 - Calculate metric for specific node
         for node in range(2,8):
-            #TODO: change to dynamic node
-            #Put your metric dict for node level here in below format
-            #node_df[nodeid][owner_tag] = metric_dict (Example: nodedf[2]['pdr_metric'] = node2_pdr_metric_dict) 
-            node_df[node]["energy_cons_metric"] = energy_metric_dict
-            #Step 4.1 calculate metric for a specific node
-            #energy_cons_node_metric = calculate_energy_cons_metrics(df_all_meta_packets, node=node)
-            #Step 4.2 Convert calculated metric to dict
-            # energy_node_metric_dict = energy_cons_node_metric.to_dict("records")
-            #Step 4.3 Put your metric dict for node level here in this format node_df[node][owner_tag] = metric_dict 
-            #node_df[node]['energy_cons_metric'] = energy_node_metric_dict 
-            pass
+          energy_node = df_all_meta_packets.loc[df_all_meta_packets['node']==node].copy()
+          energy_cons_node_metrics = calculate_energy_cons_metrics(energy_node)
+          energy_cons_node_metrics_dict = energy_cons_node_metrics.to_dict("records")
+          node_df[node]['energy_cons_metric'] = energy_cons_node_metrics_dict 
+          
 
         
         """ ########### Place calcs above here ########### """

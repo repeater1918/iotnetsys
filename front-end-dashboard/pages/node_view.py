@@ -137,7 +137,7 @@ def update_graph(n, pathname):
         
     df_energy = pd.DataFrame(api_data['energy_cons_metric'])
     if len(api_data['energy_cons_metric']) == 0:
-        graph_duty_cycle = px.bar(title="Energy Level")
+        graph_duty_cycle = px.bar(title="Average energy consumption")
     else:
         graph_duty_cycle = go.Figure(
                 go.Indicator(
@@ -146,7 +146,7 @@ def update_graph(n, pathname):
                     
                     domain={"x": [0, 1], "y": [0, 1]},
                     delta={"reference": 100},
-                    title={"text": "Energy Level"},
+                    title={"text": "Average energy consumption"},
                     gauge={
                         "axis": {"range": [None, 100]},
                         "steps": [

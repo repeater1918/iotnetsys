@@ -27,7 +27,7 @@ def calculate_received_metrics(df: pd.DataFrame, timeframe: int, bins: int) -> T
     return metrics_net, metrics_node
 
 def calculate_metrics(df: pd.DataFrame, env_time_min, bin_size: int) -> pd.DataFrame:
-    metrics_network = df.groupby('bins').agg({'packet_id': 'count', 'env_timestamp': max}).rename(columns={'packet_id': 'total_packets'})
+    metrics_network = df.groupby('bins').agg({'packet_id': 'count'}).rename(columns={'packet_id': 'total_packets'})
     metrics_network = metrics_network.reset_index()
     
     #accumulation and env_timestamp
@@ -35,7 +35,7 @@ def calculate_metrics(df: pd.DataFrame, env_time_min, bin_size: int) -> pd.DataF
     for i in range(1, len(metrics_network['total_packets'])): 
         metrics_network.loc[i, 'total_packets'] += metrics_network.loc[i-1, 'total_packets']
         metrics_network.loc[i, 'env_timestamp'] = env_time_min + pd.Timedelta(milliseconds=bin_size) * (i+1)
-    
+    #breakpoint()
     metrics_network['env_timestamp'] = metrics_network['env_timestamp'].dt.strftime("%H:%M:%S").astype(str)
     metrics_network['bins'] = metrics_network.reset_index()['bins'].apply(bin_label)
     

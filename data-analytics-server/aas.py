@@ -48,6 +48,7 @@ app = FastAPI()
 
 #  time frame parameter and deadline loss limit
 global timeframe_param, timeframe_dls
+timeframe_param=60
 # Global reference variables to manage watchers
 global response_history
 response_history = 0
@@ -133,11 +134,11 @@ def packet_metric_scheduler():
             
 
         # Nwe - to calculate end-to-end delay
-        e2e_metric = calculate_end_to_end_delay(copy.deepcopy(df_all_packets), timeframe=60000, bins=10)
-        # convert dataframe to a dictionary so it can be sent as json
-        e2e_dict = e2e_metric.to_dict("records")
-        # adding a label to data so when it reaches the front end we know who it belongs to
-        network_df['e2e_metric'] = e2e_dict
+        # e2e_metric = calculate_end_to_end_delay(copy.deepcopy(df_all_packets), timeframe=60000, bins=10)
+        # # convert dataframe to a dictionary so it can be sent as json
+        # e2e_dict = e2e_metric.to_dict("records")
+        # # adding a label to data so when it reaches the front end we know who it belongs to
+        # network_df['e2e_metric'] = e2e_dict
         # pass dictionary data into the on_packet_data_update to send it to the front-end
         #Step 4 - Calculate metric for specific node
         for node in range(2,8):
@@ -169,7 +170,9 @@ def packet_metric_scheduler():
             pass
 
         #calculate number of received packets
-        received_metrics, received_metrics_node = calculate_received_metrics(copy.deepcopy(df_all_packets), timeframe=60000, bins=10)
+        received_metrics, received_metrics_node = calculate_received_metrics(copy.deepcopy(df_all_packets), timeframe=timeframe_param*1000, bins=10)
+        
+        
         #for network
         network_df['received_metric'] = received_metrics 
         #for nodes

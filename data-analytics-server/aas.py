@@ -46,8 +46,8 @@ node_collection_names = client.get_node_collection_names()
 # Start FASTAPI server
 app = FastAPI()
 
-#  time frame parameter
-global timeframe_param
+#  time frame parameter and deadline loss limit
+global timeframe_param, timeframe_dls
 # Global reference variables to manage watchers
 global response_history
 response_history = 0
@@ -79,8 +79,14 @@ async def root():
 
 @app.post("/api/timeframe")
 async def root(data: Timeframe):
-    global timeframe_param
+    global timeframe_param 
     timeframe_param = data.timeframe
+    print(data.timeframe)
+
+@app.post("/api/timeframe_dls")
+async def root(data: Timeframe):
+    global timeframe_dls 
+    timeframe_dls = data.timeframe
     print(data.timeframe)
 
 

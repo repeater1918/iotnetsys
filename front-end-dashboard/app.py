@@ -11,7 +11,7 @@ import dash
 import dash_bootstrap_components as dbc
 import dash_bootstrap_templates as dbt
 import flask
-from utils.data_connectors import send_timeframe
+from utils.data_connectors import send_timeframe, send_dlloss
 
 print(f"Running in mode -> {os.environ.get('DEPLOYMENT', 'dev')}")
 
@@ -101,6 +101,18 @@ def set_timeframe(value):
         send_timeframe(60000) #default 1 min
     else:
         send_timeframe(value)
+
+#App management callbacks
+@app.callback(
+    Output("dropdown-dlloss", "required"),
+    Input("dropdown-dlloss", "value")
+)
+def set_timeframe(value):
+    print(value)
+    if value == None:
+        send_dlloss(25) #default 25ms
+    else:
+        send_dlloss(value)
 
 
 

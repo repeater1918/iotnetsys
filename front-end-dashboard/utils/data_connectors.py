@@ -40,3 +40,10 @@ def send_timeframe(milliseconds: int):
     print(res.status_code)
     return res
     # TODO error management
+
+def send_dlloss(milliseconds: int):
+    result_dict = {'timeframe': milliseconds}
+    res = requests.post(AAS_URI+f"api/timeframe_dls", json=result_dict) 
+    print(res.status_code)
+    return res
+    # TODO error management

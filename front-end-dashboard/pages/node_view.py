@@ -25,11 +25,6 @@ def layout(nodeid):
 
     return html.Div(
     children=[
-        dcc.Interval(
-            id="interval-component",
-            interval=5 * 1000 * 10000,  # check for a data update every 5 seconds
-        ),
-        html.P("This is the content of the node {}".format(nodeid)),
         dbc.Row(
             [
                 dbc.Col(get_receivedpackets_graph(is_init=True, node_id=nodeid), md=6, style={"margin-top": "16px"}),

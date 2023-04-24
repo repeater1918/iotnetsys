@@ -24,17 +24,16 @@ import pandas as pd
 import threading
 import time
 from datetime import datetime
-from typing import Dict, List
+from typing import Dict, List, Union
 import copy
 from collections import defaultdict
 import requests, json
 from database.mongodb import Database
 from fastapi import FastAPI
-from models import MetaStream, PacketStream, calculate_pdr_metrics, calculate_icmp_metrics, \
+from models import MetaStream, PacketStream,TopologyStream
+from metrics_calculators import calculate_pdr_metrics, calculate_icmp_metrics, \
     calculate_parent_change_ntwk_metrics, calculate_parent_change_node_metrics, calculate_received_metrics, calculate_queue_loss, \
-calculate_energy_cons_metrics
-from models.e2e_delay import calculate_end_to_end_delay
-from models.dead_loss import calculate_dead_loss
+calculate_energy_cons_metrics,calculate_end_to_end_delay, calculate_dead_loss
 from models import Timeframe
 
 FRONT_END_URL = "http://127.0.0.1:8050/data-update"
@@ -54,23 +53,28 @@ global response_history
 response_history = 0
 global update_event
 update_event = datetime.now()
-global packet_stream, meta_stream
+global packet_stream, meta_stream, topo_stream
 packet_stream = PacketStream(packet_update_limit=100)
 meta_stream = MetaStream(packet_update_limit=8)
-global last_packet_id, last_meta_id
+topo_stream = TopologyStream(packet_update_limit=1)
+
+global last_packet_id, last_meta_id, last_topo_id
 last_meta_id = None
 last_packet_id = {}
+last_topo_id = None
 
-global network_df,node_df 
+global network_df,node_df,topo_df
 network_df = {} #this is storing dataframe for network level metric in format {"owner_metric": metric_dict}, example: {"pdr_metric": data}
 node_df = defaultdict(dict) #this is storing dataframe for node level metric in format {"nodeid": {"owner_metric": metric_dict}}, example: {"1": {"pdr_metric": data}}
-
+topo_df = {}
 
 # Events (bools) to help prevent race conditions between metric and db watchers
 is_updating_packet = threading.Event()
 is_calculating_packet = threading.Event()
 is_updating_meta = threading.Event()
 is_calculating_meta = threading.Event()
+is_updating_topo = threading.Event()
+is_calculating_topo = threading.Event()
 
 
 # We will use these as API end points when the user changes parameters (via Dashboard)
@@ -267,6 +271,39 @@ def meta_metric_scheduler():
 
         time.sleep(15) 
 
+def topology_event_scheduler():
+     
+     global topo_df
+     while True:
+        if is_updating_topo.is_set():
+            #print("TopoEventScheduler: skip calc as db update is active")
+            time.sleep(15)
+            continue
+
+        if not topo_stream.is_update_ready:
+            #print("TopoEventScheduler: skip calc not enough new packets")
+            time.sleep(30)
+            continue
+        
+        # Notify threads that metric calculation is in process
+        is_calculating_topo.set()
+
+        # This dataframe represents all historical packets
+        df_all_topo_packets = topo_stream.flush_stream().copy(deep=True)
+
+        # Consider moving these below logic to a util
+        df_all_topo_packets = df_all_topo_packets[['node','role','parent']]
+        df_all_topo_packets = df_all_topo_packets.fillna(value={'role':'sensor'})
+        df_all_topo_packets['direct_parent'] = [l[0] for l in df_all_topo_packets['parent'] if len(l) > 0].copy()
+        topo_df = df_all_topo_packets.to_dict('records')
+
+        # Notify threads metric calculation is complete (db updates can resume)
+        df_all_topo_packets =None #clear computed
+        is_calculating_topo.clear()
+
+        time.sleep(15) 
+
+
 
 def watch_packetlogs() -> None:
     """Periodically queries MongoDB to check for new packet logs and updates PacketStream"""
@@ -314,7 +351,7 @@ def watch_metalogs() -> None:
     """Periodically queries MongoDB to check for new meta logs and update MetaStream"""
     while True:
         # if the metric calculation function (watch_metrics) is active, pause data update
-        while is_calculating_packet.is_set():
+        while is_calculating_meta.is_set():
             time.sleep(15)
 
         global last_meta_id, meta_stream
@@ -329,7 +366,7 @@ def watch_metalogs() -> None:
 
         if data is None:
             # print("WatchMetaLogs: no new meta logs in DB, putting watcher to sleep")
-            is_updating_packet.clear()
+            is_updating_meta.clear()
             time.sleep(30)
             continue
 
@@ -342,6 +379,40 @@ def watch_metalogs() -> None:
         is_updating_meta.clear()
         # print(
         #     f"WatchMetaLogs: stream size = {len(meta_stream.stream)}, all logs = {len(meta_stream.df_packet_hist)}, update ready: {meta_stream.is_update_ready}"
+        # )
+        time.sleep(15)
+
+
+def watch_topology() -> None:
+    while True:
+
+        while is_calculating_topo.is_set():
+            time.sleep(15)
+
+        global last_topo_id, topo_stream
+        is_updating_topo.set()
+
+        #print("Topology data update in progress")
+
+        data, id_max = client.find_by_pagination(
+            collection_name="topology", last_id = None, page_size=10
+        )
+
+        if data is None:
+            # print("WatchMetaLogs: no new topo logs in DB, putting watcher to sleep")
+            is_updating_topo.clear()
+            time.sleep(30)
+            continue
+
+        # Update the meta stream with new data
+        topo_stream.append_stream(data)
+        # Remember the latest document received for next query
+        last_topo_id = id_max
+
+        # Notify threads data update is active
+        is_updating_topo.clear()
+        # print(
+        #     f"WatchTopoLogs: stream size = {len(meta_stream.stream)}, all logs = {len(meta_stream.df_packet_hist)}, update ready: {meta_stream.is_update_ready}"
         # )
         time.sleep(15)
 
@@ -384,6 +455,7 @@ async def read_network_df(metric_owner):
         response_df = network_df[metric_owner]
     except:
         response_df = {}
+        
     return response_df
 
 
@@ -405,19 +477,37 @@ async def read_node_df(metric_owner, node: int = 1):
     return response_df
 
 
+@app.get("/topo_data/")
+async def read_topo_db(q: Union[str, None] = None):
+    supported_query = ['node_sensor', 'node_parent']
+    
+    if q in supported_query:
+        if q == 'node_sensor':
+            res = [x['node'] for x in topo_df if x['role'] == 'sensor']          
+        if q == 'node_parent':
+            res = [x['node'] for x in topo_df if x['role'] == 'server']
+    else:
+        res = topo_df
+
+    return res
+
 
 # create a thread to run the packet log collection data fetch
 packetlog_watch_thread = threading.Thread(target=watch_packetlogs)
 metalog_watch_thread = threading.Thread(target=watch_metalogs)
+topology_watch_thread = threading.Thread(target=watch_topology)
 
 # create a thread so that the FASTAPI server can continue running without db watch blocking
 packet_scheduler_thread = threading.Thread(target=packet_metric_scheduler)
 meta_scheduler_watch_thread = threading.Thread(target=meta_metric_scheduler)
+topo_scheduler_thread = threading.Thread(target=topology_event_scheduler)
 
 # start db watchers
 packetlog_watch_thread.start()
 metalog_watch_thread.start()
+topology_watch_thread.start()
 
 # start metric schedulers
 packet_scheduler_thread.start()
 meta_scheduler_watch_thread.start()
+topo_scheduler_thread.start()

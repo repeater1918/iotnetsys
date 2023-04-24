@@ -66,7 +66,6 @@ app.layout = html.Div(
                 ),
             ],
         ),
-        html.P(id="testing")
     ]
 )
 
@@ -84,12 +83,6 @@ def load_heading(pathname):
     else: 
         return top_page_heading("Network Level")
 
-
-#App management callbacks
-@app.callback(Output('session_data', 'data'),
-              Input('url', 'pathname'))
-def update_session_storage(pathname):
-    session_data = {'update-interval': UPDATE_INTERVAL}
 
 #App management callbacks
 @app.callback(

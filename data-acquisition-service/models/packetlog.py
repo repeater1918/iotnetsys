@@ -5,12 +5,12 @@ from models.base import BaseLog
 
 
 class PacketLog(BaseLog):
-    def __init__(self, timestamp: int, node: int, log: str, env_timestamp: datetime) -> None:
+    def __init__(self, timestamp: int, node: int, log: str, env_timestamp: datetime, log_fields: list) -> None:
         super().__init__(timestamp, node, log, env_timestamp)
+        self.type = log_fields[4]
+        self.direction: str = log_fields[0].lower()
+        self.packet_id: str = log_fields[3]
 
-        self.direction: str = log[:4].lower()
-        self.packet_id: str = log.split(" ")[1]
-        self.type: str = 'packet'
 
     @staticmethod
     def from_dict(source: Dict):

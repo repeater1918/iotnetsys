@@ -4,7 +4,9 @@ from utils.graphing import bin_label
 
 def calculate_end_to_end_delay(df: pd.DataFrame, timeframe: int, bins: int, nodeID:int) -> pd.DataFrame:
     # filter down to relevant timeframe
-    df = df.loc[df['timestamp'] <= timeframe].copy()
+    start_timestamp_limit = df['timestamp'].min()
+    end_timestamp_limit = start_timestamp_limit + timeframe
+    df = df.loc[df['timestamp'] <= end_timestamp_limit ].copy()
     # add new column for date only
     df['date'] = df['env_timestamp'].dt.date
     # retrieve send records and received records separately

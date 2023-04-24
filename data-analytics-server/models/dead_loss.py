@@ -4,7 +4,10 @@ from utils.graphing import bin_label
 
 
 def calculate_dead_loss(df: pd.DataFrame, timeframe: int, timeframe_deadline:int,bins: int, nodeID:int) -> pd.DataFrame:
-    df = df.loc[df['timestamp'] <= timeframe].copy()
+    # filter down to relevant timeframe
+    start_timestamp_limit = df['timestamp'].min()
+    end_timestamp_limit = start_timestamp_limit + timeframe
+    df = df.loc[df['timestamp'] <= end_timestamp_limit ].copy()
     # add new column for date only
     df['date'] = df['env_timestamp'].dt.date
     # retrieve send records and received records separately

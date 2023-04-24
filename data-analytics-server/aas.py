@@ -101,6 +101,7 @@ def packet_metric_scheduler():
 
     """
     global packet_stream, node_df
+    global timeframe_param,timeframe_dls
 
     while True:
         if is_updating_packet.is_set():
@@ -134,23 +135,24 @@ def packet_metric_scheduler():
             
 
         # Nwe - to calculate end-to-end delay (network level)
-        e2e_metric = calculate_end_to_end_delay(copy.deepcopy(df_all_packets), timeframe=60000, bins=10,nodeID=-1)
+        global timeframe_param
+        e2e_metric = calculate_end_to_end_delay(copy.deepcopy(df_all_packets), timeframe=timeframe_param*1000, bins=10,nodeID=-1)
         e2e_dict = e2e_metric.to_dict("records")
         network_df['e2e_metric'] = e2e_dict
         # Nwe - to calculate end-to-end delay (node level)
         for node in range(2,8):
-            e2e_node_metric = calculate_end_to_end_delay(copy.deepcopy(df_all_packets), timeframe=60000, bins=10,nodeID=node)
+            e2e_node_metric = calculate_end_to_end_delay(copy.deepcopy(df_all_packets), timeframe=timeframe_param*1000, bins=10,nodeID=node)
             e2e_node_metric_dict = e2e_node_metric.to_dict("records")
             node_df[node]['e2e_metric'] = e2e_node_metric_dict
             pass
 
         # Nwe - to calculate dead loss (network level)
-        deadloss_metric = calculate_dead_loss(copy.deepcopy(df_all_packets), timeframe=60000, bins=10,nodeID=-1)
+        deadloss_metric = calculate_dead_loss(copy.deepcopy(df_all_packets), timeframe=timeframe_param*1000,timeframe_deadline=timeframe_dls, bins=10,nodeID=-1)
         deadloss_dict = deadloss_metric.to_dict("records")
         network_df['deadloss_metric'] = deadloss_dict 
         # Nwe - to calculate dead loss (node level)
         for node in range(2,8):
-            deadloss_node_metric = calculate_dead_loss(copy.deepcopy(df_all_packets), timeframe=60000, bins=10,nodeID=node)
+            deadloss_node_metric = calculate_dead_loss(copy.deepcopy(df_all_packets), timeframe=timeframe_param*1000,timeframe_deadline=timeframe_dls, bins=10,nodeID=node)
             deadloss_node_metric_dict = deadloss_node_metric.to_dict("records")
             node_df[node]['deadloss_metric'] = deadloss_node_metric_dict
             pass

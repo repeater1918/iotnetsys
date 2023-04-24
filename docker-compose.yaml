@@ -1,0 +1,24 @@
+version: "3.3"
+
+services:
+  front-end-dashboard:
+    container_name: app
+    build:
+      context: ./front-end-dashboard
+      dockerfile: Dockerfile
+    env_file:
+      - .envs/mongodb.env
+    ports:
+      - "80:80"
+    image: repeater918/iontnetsys-aap
+    depends_on:
+      - analytics-api-srv
+
+  analytics-api-srv:
+    container_name: aas
+    env_file:
+      - .envs/mongodb.env
+    build:
+      context: ./data-analytics-server
+      dockerfile: Dockerfile
+    image: repeater918/iontnetsys-aas

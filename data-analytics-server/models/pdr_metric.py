@@ -1,9 +1,10 @@
 import numpy as np
 import pandas as pd
 from utils.graphing import bin_label
+from typing import Tuple
 
 
-def calculate_pdr_metrics(df: pd.DataFrame, timeframe: int, bins: int) -> pd.DataFrame:
+def calculate_pdr_metrics(df: pd.DataFrame, timeframe: int, bins: int) -> Tuple[dict, dict]:
     # set pdr limit
     df['pdr_lim'] = 5000
     # calc diff from send and recv
@@ -34,10 +35,12 @@ def calculate_pdr_metrics(df: pd.DataFrame, timeframe: int, bins: int) -> pd.Dat
         boundaries.append(start_point + (i * bin_size))
     
     df['bins'] = pd.cut(df['timestamp'], bins=boundaries)
+
     # calculate network metrics based on timeframe and bins (how far back)
     network_metric = _calculate_network_metrics(df)
+    node_metric = _calculate_node_metrics(df)
 
-    return network_metric
+    return network_metric, node_metric
 
 
 def _calculate_network_metrics(df: pd.DataFrame) -> pd.DataFrame:
@@ -50,5 +53,24 @@ def _calculate_network_metrics(df: pd.DataFrame) -> pd.DataFrame:
     network_metric['env_timestamp'] = network_metric['env_timestamp'].dt.strftime("%H:%M:%S").astype(str)
     network_metric['bins'] = network_metric.reset_index()['bins'].apply(bin_label)
     
-    return network_metric
-    
+    return network_metric.to_dict('records')
+
+def _calculate_node_metrics(df: pd.DataFrame) -> pd.DataFrame:
+    node_metric = df.groupby(['node','bins']).agg({'pdr_loss': sum, 'packet_id': 'count', 'env_timestamp': max}).rename(columns={'pdr_loss': 'failed_packets', 'packet_id': 'total_packets'})
+    node_metric['successful_packets'] = node_metric['total_packets'] - node_metric['failed_packets']
+    node_metric['successful_packets_precentage'] = node_metric['successful_packets'] / node_metric['total_packets'] * 100
+    node_metric['failed_packets_precentage'] = node_metric['failed_packets'] / node_metric['total_packets'] * 100
+    node_metric = node_metric.reset_index()
+
+    node_metric['env_timestamp'] = node_metric['env_timestamp'].dt.strftime("%H:%M:%S").astype(str)
+    node_metric['bins'] = node_metric.reset_index()['bins'].apply(bin_label)
+    node_metric = node_metric.dropna()
+
+    # target = {"1": {"pdr_metric": data}}
+    result = {}
+    for node in node_metric['node'].unique():
+        result[node] = node_metric.loc[node_metric['node'] == node].to_dict('records')
+
+    return result
+
+

@@ -10,13 +10,17 @@ TODO:
 
 """
 from pathlib import Path
-
+import os
 from dotenv import load_dotenv
 
-dotenv_path = Path(Path(__file__).parent.resolve(), "../.envs/mongodb.env")
-load_dotenv(dotenv_path=dotenv_path)
+if os.environ.get('DEPLOYMENT', 'dev') == 'dev':
+    dotenv_path_dev = Path(Path(__file__).parent.resolve(), "../.envs/mongodb.env")
+    load_dotenv(dotenv_path=dotenv_path_dev)
 
-import os
+print(f"Running in mode -> {os.environ.get('DEPLOYMENT', 'dev')}")
+
+import sys
+import pandas as pd
 import threading
 import time
 from datetime import datetime
@@ -31,6 +35,7 @@ from models import MetaStream, PacketStream, calculate_pdr_metrics, calculate_ic
 calculate_energy_cons_metrics
 from models.e2e_delay import calculate_end_to_end_delay
 from models.dead_loss import calculate_dead_loss
+from models import Timeframe
 
 FRONT_END_URL = "http://127.0.0.1:8050/data-update"
 
@@ -41,6 +46,9 @@ node_collection_names = client.get_node_collection_names()
 # Start FASTAPI server
 app = FastAPI()
 
+#  time frame parameter and deadline loss limit
+global timeframe_param, timeframe_dls
+timeframe_param=60
 # Global reference variables to manage watchers
 global response_history
 response_history = 0
@@ -68,7 +76,19 @@ is_calculating_meta = threading.Event()
 # We will use these as API end points when the user changes parameters (via Dashboard)
 @app.get("/")
 async def root():
-    return {"message": str(response_history)}
+    return {"network_df": sys.getsizeof(network_df), "node_df": sys.getsizeof(node_df)}
+
+@app.post("/api/timeframe")
+async def root(data: Timeframe):
+    global timeframe_param 
+    timeframe_param = data.timeframe
+    print(data.timeframe)
+
+@app.post("/api/timeframe_dls")
+async def root(data: Timeframe):
+    global timeframe_dls 
+    timeframe_dls = data.timeframe
+    print(data.timeframe)
 
 
 def packet_metric_scheduler():
@@ -80,7 +100,7 @@ def packet_metric_scheduler():
     use this df to calculate your metrics
 
     """
-    global packet_stream
+    global packet_stream, node_df
 
     while True:
         if is_updating_packet.is_set():
@@ -102,25 +122,16 @@ def packet_metric_scheduler():
 
         """ ########### Place calcs below here ########### """
 
-        # Step 1 - using all historical packets (df_all_packets) - calculate your metrics and return a dataframe
-        pdr_metric = calculate_pdr_metrics(copy.deepcopy(df_all_packets), timeframe=60000, bins=10)
-        
-        # Step 2 - when you have the result convert your dataframe to a dictionary so it can be sent as json
-        pdr_metric_dict = pdr_metric.to_dict("records")
+        # Step 1 + 2 - using all historical packets (df_all_packets) - calculate your metrics and return a dataframe
+        pdr_metric_dict, pdr_node_metric_dict = calculate_pdr_metrics(copy.deepcopy(df_all_packets), timeframe=60000, bins=10)
         
         # Step 3 - add a label to your data so when it reaches the front end we know who it belongs to
         network_df['pdr_metric'] = pdr_metric_dict 
 
         #Step 4 - Calculate metric for specific node
-        for node in range(2,8):
-            #TODO: change to dynamic node
-            #Step 4.1 calculate metric for a specific node
-            #pdr_node_metric = calculate_pdr_metrics(df_all_meta_packets, node=node)
-            #Step 4.2 Convert calculated metric to dict
-            #pdr_node_metric_dict = pdr_metric.to_dict("records")
-            #Step 4.3 Put your metric dict for node level here in this format node_df[node][owner_tag] = metric_dict 
-            #node_df[node]['pdr_metric'] = pdr_node_metric_dict
-            pass
+        for node, data in pdr_node_metric_dict.items():
+            node_df[node]['pdr_metric'] = data
+            
 
         # Nwe - to calculate end-to-end delay (network level)
         e2e_metric = calculate_end_to_end_delay(copy.deepcopy(df_all_packets), timeframe=60000, bins=10,nodeID=-1)
@@ -144,20 +155,15 @@ def packet_metric_scheduler():
             node_df[node]['deadloss_metric'] = deadloss_node_metric_dict
             pass
 
-
-        received_metrics = calculate_received_metrics(copy.deepcopy(df_all_packets), timeframe=60000, bins=10)
-        received_metric_dict = received_metrics.to_dict("records")
-        network_df['received_metric'] = received_metric_dict 
-
-        for node in range(2,8):
-
-            #Step 4.1 calculate metric for a specific node
-            #received_node_metrics = calculate_received_metrics(df_all_meta_packets, node=node)
-            #Step 4.2 Convert calculated metric to dict
-            #received_node_metrics_dict = received_node_metrics.to_dict("records")
-            #Step 4.3 Put your metric dict for node level here in this format node_df[node][owner_tag] = metric_dict 
-            #node_df[node]['received_metric'] = received_node_metrics_dict
-            pass
+        #calculate number of received packets
+        received_metrics, received_metrics_node = calculate_received_metrics(copy.deepcopy(df_all_packets), timeframe=timeframe_param*1000, bins=10)
+        
+        
+        #for network
+        network_df['received_metric'] = received_metrics 
+        #for nodes
+        for node, data in received_metrics_node.items():
+            node_df[node]['received_metric'] = data
 
         pc_metric_network_int = calculate_parent_change_ntwk_metrics(df_all_packets, timeframe=60000, bins=10)
         pc_metric_node = calculate_parent_change_node_metrics(df_all_packets, timeframe=60000, bins=10) #pc_metric is not working, with 0 in values ..
@@ -218,37 +224,22 @@ def meta_metric_scheduler():
         df_all_meta_packets = meta_stream.flush_stream().copy(deep=True)
 
         """ ########### Place calcs below here ########### """
-        # Step 1 - using all historical packets (df_all_packets) - calculate your metrics and return a dataframe
-        icmp_metric = calculate_icmp_metrics(copy.deepcopy(df_all_meta_packets))
-        # Step 2 - when you have the result convert your dataframe to a dictionary so it can be sent as json
-        icmp_metric_dict = icmp_metric.to_dict("records")
+        # Step 1 + 2 - using all historical packets (df_all_packets) - calculate your metrics and return a dataframe
+        net_icmp_metric, node_icmp_metric = calculate_icmp_metrics(copy.deepcopy(df_all_meta_packets))
         # Step 3 - add a label to your data so when it reaches the front end we know who it belongs to
-        network_df['icmp_metric'] = icmp_metric_dict        
+        network_df['icmp_metric'] = net_icmp_metric        
         #Step 4 - Calculate metric for specific node
-        for node in range(2,8):
-            #TODO: change to dynamic node
-            #Step 4.1 calculate metric for a specific node
-            #icmp_node_metric = calculate_icmp_metrics(df_all_meta_packets, node=node)
-            #Step 4.2 Convert calculated metric to dict
-            #icmp_node_metric_dict = icmp_metric.to_dict("records")
-            #Step 4.3 Put your metric dict for node level here in this format node_df[node][owner_tag] = metric_dict 
-            #node_df[node]['icmp_metric'] = icmp_node_metric_dict
-            pass
-
-
-        queueloss_metrics = calculate_queue_loss(copy.deepcopy(df_all_meta_packets))
-        queueloss_metric_dict = queueloss_metrics.to_dict("records")
-        network_df['queueloss_metric'] = queueloss_metric_dict
         #Step 4 - Calculate metric for specific node
-        for node in range(2,8):
-            #TODO: change to dynamic node
-            #Step 4.1 calculate metric for a specific node
-            #queueloss_metrics = calculate_queue_loss(df_all_meta_packets, node=node)
-            #Step 4.2 Convert calculated metric to dict
-            #queueloss_metric_dict = queueloss_metrics.to_dict("records")
-            #Step 4.3 Put your metric dict for node level here in this format node_df[node][owner_tag] = metric_dict 
-            #node_df[node]['queueloss_metric'] = queueloss_metric_dict
-            pass
+        for node, data in node_icmp_metric.items():
+            node_df[node]['icmp_metric'] = data
+   
+        #calculate queue loss
+        queueloss_network, queueloss_node = calculate_queue_loss(copy.deepcopy(df_all_meta_packets))
+        #for network
+        network_df['queueloss_metric'] = queueloss_network
+        #for each node
+        for node, data in queueloss_node.items():
+            node_df[node]['queueloss_metric'] = data
 
         # Step 1 - using all historical packets (df_all_packets) - calculate your metrics and return a dataframe
         energy_cons_metric = calculate_energy_cons_metrics(copy.deepcopy(df_all_meta_packets))
@@ -259,19 +250,11 @@ def meta_metric_scheduler():
 
         #Step 4 - Calculate metric for specific node
         for node in range(2,8):
-            #TODO: change to dynamic node
-            #Put your metric dict for node level here in below format
-            #node_df[nodeid][owner_tag] = metric_dict (Example: nodedf[2]['pdr_metric'] = node2_pdr_metric_dict) 
-            node_df[node]["icmp_metric"] = icmp_metric_dict 
-            node_df[node]["queueloss_metric"] = queueloss_metric_dict
-            node_df[node]["energy_cons_metric"] = energy_metric_dict
-            #Step 4.1 calculate metric for a specific node
-            #energy_cons_node_metric = calculate_energy_cons_metrics(df_all_meta_packets, node=node)
-            #Step 4.2 Convert calculated metric to dict
-            # energy_node_metric_dict = energy_cons_node_metric.to_dict("records")
-            #Step 4.3 Put your metric dict for node level here in this format node_df[node][owner_tag] = metric_dict 
-            #node_df[node]['energy_cons_metric'] = energy_node_metric_dict 
-            pass
+          energy_node = df_all_meta_packets.loc[df_all_meta_packets['node']==node].copy()
+          energy_cons_node_metrics = calculate_energy_cons_metrics(energy_node)
+          energy_cons_node_metrics_dict = energy_cons_node_metrics.to_dict("records")
+          node_df[node]['energy_cons_metric'] = energy_cons_node_metrics_dict 
+          
 
         
         """ ########### Place calcs above here ########### """
@@ -405,15 +388,18 @@ async def read_network_df(metric_owner):
 #Query format for nodelv: AAS_URI/nodelv_data/pdr_metric?node=2 
 @app.get("/node_data/{metric_owner}")
 async def read_node_df(metric_owner, node: int = 1):
+    global node_df
     response_df = {}
     if node > 1:
         #node 1 is root already, no need to get it
         #print(f"API query for {node}")
         try:
             response_df = node_df[node][metric_owner]
-        except:
+            return response_df
+        except Exception as e:
+            print(e)
             response_df = {}
-        
+    
     return response_df
 
 

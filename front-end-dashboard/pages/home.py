@@ -7,19 +7,17 @@ import dash_bootstrap_components as dbc
 from views.graph_duty_cycle import graph_duty_cycle
 import plotly.graph_objects as go
 from views.network_topology import topo_graph
+from views.graph_icmp_packets import get_icmp_graph
+from views.graph_pdr import get_pdr_graph
+from views.graph_queue_loss import get_queueloss_graph
+from views.graph_received_packets import get_receivedpackets_graph
 import pandas as pd
 from utils.data_connectors import get_network_data
 
 # from app import server
 
-dbt.load_figure_template("DARKLY")
-
 dash.register_page(__name__, path="/")
 
-graph_pdr_metric = dcc.Graph(id="graph-pdr", figure=px.bar(title="Percentage Packet Loss"))
-graph_icmp_metric = dcc.Graph(id="graph-icmp", figure=px.bar(title="ICMP Packets"))
-graph_received_metric = dcc.Graph(id="graph-received", figure=px.line(title="Number of received packets"))
-graph_queue_loss = dcc.Graph(id="graph-queueloss", figure=px.bar(title="Queue loss"))
 graph_duty_cycle = dcc.Graph(id="graph_duty_cycle")
 graph_e2e_metric = dcc.Graph(id="graph-e2e", figure=px.bar(title="Average End to End Delay"))
 graph_deadloss_metric = dcc.Graph(id="graph-deadloss", figure=px.bar(title="Deadline Loss Percentage"))
@@ -28,12 +26,12 @@ layout = html.Div(
     children=[
         dbc.Row(
             [
-                dbc.Col(graph_received_metric, md=6, style={"margin-top": "16px"}),
-                dbc.Col(graph_queue_loss, md=6, style={"margin-top": "16px"}),
+                dbc.Col(get_receivedpackets_graph(is_init=True), md=6, style={"margin-top": "16px"}),
+                dbc.Col(get_queueloss_graph(is_init=True), md=6, style={"margin-top": "16px"}),
                 dbc.Col(graph_e2e_metric, md=6, style={"margin-top": "16px"}),
                 dbc.Col(graph_deadloss_metric, md=6, style={"margin-top": "16px"}),
-                dbc.Col(graph_pdr_metric, md=6, style={"margin-top": "16px"}),
-                dbc.Col(graph_icmp_metric, md=6, style={"margin-top": "16px"}),
+                dbc.Col(get_pdr_graph(is_init=True), md=6, style={"margin-top": "16px"}),
+                dbc.Col(get_icmp_graph(is_init=True), md=6, style={"margin-top": "16px"}),
 
             ]),
         dbc.Row([
@@ -45,7 +43,7 @@ layout = html.Div(
 )
 
 # Callback to update data in graphs (runs every 5 sec)
-@dash.callback(Output("graph-received", "figure"),
+@dash.callback(Output("graph-receivedpackets", "figure"),
     Output("graph-queueloss", "figure"),
     Output("graph-e2e", "figure"),
     Output("graph-deadloss", "figure"),
@@ -57,46 +55,35 @@ layout = html.Div(
 def data_scheduler(n_intervals, pathname):
     api_data  = get_network_data()
     if pathname == '/':
+        pass
         # If data hasn't been udpate for my graph return an empty graph
-        #Using result from API directly      
-        df_pdr = pd.DataFrame(api_data['pdr_metric'])
-        if len(api_data['pdr_metric']) == 0:
-            pdr_graph = px.line(title="Percentage Packet Loss")
-        else:      
-            pdr_graph = px.line(
-                df_pdr,
-                x="env_timestamp",
-                y=["failed_packets_precentage", "successful_packets_precentage"],
-                color_discrete_sequence=["red", "blue"],
-                title="Packet Delivery Ratios",
-                labels={"env_timestamp": "Time Invervals", "value": "Percentage"},
-            )
-
+        #Using result from API directly
+    df_pdr = pd.DataFrame(api_data['pdr_metric'])
+    if len(api_data['pdr_metric']) == 0:
+        pdr_graph = get_pdr_graph(is_empty=True)
+    else:      
+        pdr_graph = get_pdr_graph(df_pdr)
+    
     df_icmp = pd.DataFrame(api_data['icmp_metric'])
     if len(api_data['icmp_metric']) == 0:
-        icmp_graph = px.bar(title="ICMP Packets")
+        icmp_graph = get_icmp_graph(is_empty=True)
     else:
-        icmp_graph = px.bar(
-            df_icmp,
-            x="node",
-            y="sub_type_value",
-            title="ICMP Packets",
-            labels={"node": "Node ID", "sub_type_value": "Total ICMP Packets"},
-        )
-        icmp_graph.update_traces(marker_color="green")
-    #nomin
+        icmp_graph = get_icmp_graph(df_icmp)
+        
+    #graph for queueloss
+    df_queueloss = pd.DataFrame(api_data['queueloss_metric'])
+    if len(api_data['queueloss_metric']) == 0:
+        queueloss_graph = get_queueloss_graph(is_empty=True)
+    else:
+        queueloss_graph = get_queueloss_graph(df_queueloss)
 
+    #graph for received packets
     df_received = pd.DataFrame(api_data['received_metric'])
-    if len(api_data['received_metric']) == 0:
-        received_graph = px.line(title="Number of received packets")
+    if len(api_data['queueloss_metric']) == 0:
+        received_graph = get_receivedpackets_graph(is_empty=True)
     else:
-        received_graph = px.line(
-            df_received,
-            x="env_timestamp",
-            y="total_packets",
-            title="Number of received packets",
-            labels={"env_timestamp": "Time Invervals", "total_packets": "Number of packets"},
-        )
+        received_graph = get_receivedpackets_graph(df_received)
+    
     # Nwe - for end to end delay
     df_e2e = pd.DataFrame(api_data['e2e_metric'])
     if len(api_data['e2e_metric']) == 0:
@@ -127,32 +114,20 @@ def data_scheduler(n_intervals, pathname):
             
         )
         #deadloss_graph.update_traces(marker_color="green")
-        deadloss_graph.update_traces(line_color='blue')
-
-    df_queueloss = pd.DataFrame(api_data['queueloss_metric'])
-    if len(api_data['queueloss_metric']) == 0:
-        queueloss_graph = px.bar(title="Queue loss")
-    else:
-        queueloss_graph = px.bar(
-            df_queueloss,
-            x="node",
-            y="sub_type_value",
-            title="Queue loss",
-            labels={"node": "Node ID", "sub_type_value": "Number of dropped packets"},
-        )
-    #nomin  
+        deadloss_graph.update_traces(line_color='blue') 
+    
     df_energy = pd.DataFrame(api_data['energy_cons_metric'])
     if len(api_data['energy_cons_metric']) == 0:
-        graph_duty_cycle = px.bar(title="Energy Level")
+        graph_duty_cycle = px.bar(title="Average energy consumption")
     else:
         graph_duty_cycle = go.Figure(
                 go.Indicator(
                     mode="gauge+number+delta",
                     value=df_energy.loc[0,"energy_cons"],
-                    
+
                     domain={"x": [0, 1], "y": [0, 1]},
                     delta={"reference": 100},
-                    title={"text": "Energy Level"},
+                    title={"text": "Average energy consumption"},
                     gauge={
                         "axis": {"range": [None, 100]},
                         "steps": [
@@ -164,4 +139,4 @@ def data_scheduler(n_intervals, pathname):
                 layout={"plot_bgcolor": "#222", "paper_bgcolor": "#222"},
             )
 
-    return (received_graph, queueloss_graph, e2e_graph,deadloss_graph,graph_duty_cycle, pdr_graph, icmp_graph)
+    return (received_graph, queueloss_graph, e2e_graph, deadloss_graph, graph_duty_cycle, pdr_graph, icmp_graph)

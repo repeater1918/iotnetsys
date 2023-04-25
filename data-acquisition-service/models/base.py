@@ -5,11 +5,12 @@ import re
 
 class BaseLog(object):
 
-    def __init__(self, timestamp: int, node: int, log: str, env_timestamp: datetime) -> None:
+    def __init__(self, timestamp: int, node: int, log: str, start_timestamp: datetime) -> None:
         self.timestamp = int(timestamp)
+        self.sessionid = start_timestamp
         self.node = node if isinstance(node, int) else int(node[3:])
         self.log = log
-        self.env_timestamp = env_timestamp + timedelta(milliseconds=self.timestamp)
+        self.env_timestamp = start_timestamp + timedelta(milliseconds=self.timestamp)
         self.log_fields = self.extract_log_fields()
 
     @staticmethod

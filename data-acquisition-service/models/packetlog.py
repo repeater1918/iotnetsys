@@ -5,8 +5,9 @@ from models.base import BaseLog
 
 
 class PacketLog(BaseLog):
-    def __init__(self, timestamp: int, node: int, log: str, env_timestamp: datetime, log_fields: list) -> None:
+    def __init__(self, timestamp: int, sessionid: datetime, node: int, log: str, env_timestamp: datetime, log_fields: list) -> None:
         super().__init__(timestamp, node, log, env_timestamp)
+        self.sessionid = sessionid
         self.type = log_fields[4]
         self.direction: str = log_fields[0].lower()
         self.packet_id: str = log_fields[3]

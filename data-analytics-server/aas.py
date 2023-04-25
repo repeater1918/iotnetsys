@@ -33,7 +33,7 @@ from fastapi import FastAPI
 from models import MetaStream, PacketStream,TopologyStream
 from metrics_calculators import calculate_pdr_metrics, calculate_icmp_metrics, \
     calculate_parent_change_ntwk_metrics, calculate_parent_change_node_metrics, calculate_received_metrics, calculate_queue_loss, \
-calculate_energy_cons_metrics,calculate_end_to_end_delay, calculate_dead_loss
+calculate_energy_cons_metrics,calculate_end_to_end_delay, calculate_dead_loss, topology_df_gen
 from models import Timeframe
 
 FRONT_END_URL = "http://127.0.0.1:8050/data-update"
@@ -48,6 +48,7 @@ app = FastAPI()
 #  time frame parameter and deadline loss limit
 global timeframe_param, timeframe_dls
 timeframe_param=60
+timeframe_dls = 60
 # Global reference variables to manage watchers
 global response_history
 response_history = 0
@@ -58,11 +59,17 @@ packet_stream = PacketStream(packet_update_limit=100)
 meta_stream = MetaStream(packet_update_limit=8)
 topo_stream = TopologyStream(packet_update_limit=1)
 
+#latest id in database to determine pointer
 global last_packet_id, last_meta_id, last_topo_id
 last_meta_id = None
 last_packet_id = {}
 last_topo_id = None
 
+#global session id to determine which run data is used
+global sessionid
+sessionid = None
+
+#global dictionary to store calculated value
 global network_df,node_df,topo_df
 network_df = {} #this is storing dataframe for network level metric in format {"owner_metric": metric_dict}, example: {"pdr_metric": data}
 node_df = defaultdict(dict) #this is storing dataframe for node level metric in format {"nodeid": {"owner_metric": metric_dict}}, example: {"1": {"pdr_metric": data}}
@@ -139,7 +146,7 @@ def packet_metric_scheduler():
             
 
         # Nwe - to calculate end-to-end delay (network level)
-        global timeframe_param
+
         e2e_metric = calculate_end_to_end_delay(copy.deepcopy(df_all_packets), timeframe=timeframe_param*1000, bins=10,nodeID=-1)
         e2e_dict = e2e_metric.to_dict("records")
         network_df['e2e_metric'] = e2e_dict
@@ -148,22 +155,22 @@ def packet_metric_scheduler():
             e2e_node_metric = calculate_end_to_end_delay(copy.deepcopy(df_all_packets), timeframe=timeframe_param*1000, bins=10,nodeID=node)
             e2e_node_metric_dict = e2e_node_metric.to_dict("records")
             node_df[node]['e2e_metric'] = e2e_node_metric_dict
-            pass
+            
 
         # Nwe - to calculate dead loss (network level)
-        deadloss_metric = calculate_dead_loss(copy.deepcopy(df_all_packets), timeframe=timeframe_param*1000,timeframe_deadline=timeframe_dls, bins=10,nodeID=-1)
+        #Dang - temp fix for dl loss below, need to correct it before deployment
+        deadloss_metric = calculate_dead_loss(copy.deepcopy(df_all_packets), timeframe=timeframe_param*1000, timeframe_deadline=timeframe_dls*1000, bins=10,nodeID=-1)
         deadloss_dict = deadloss_metric.to_dict("records")
         network_df['deadloss_metric'] = deadloss_dict 
         # Nwe - to calculate dead loss (node level)
         for node in range(2,8):
-            deadloss_node_metric = calculate_dead_loss(copy.deepcopy(df_all_packets), timeframe=timeframe_param*1000,timeframe_deadline=timeframe_dls, bins=10,nodeID=node)
+            deadloss_node_metric = calculate_dead_loss(copy.deepcopy(df_all_packets), timeframe=timeframe_param*1000,timeframe_deadline=timeframe_dls*1000,bins=10,nodeID=node)
             deadloss_node_metric_dict = deadloss_node_metric.to_dict("records")
             node_df[node]['deadloss_metric'] = deadloss_node_metric_dict
-            pass
+            
 
         #calculate number of received packets
-        received_metrics, received_metrics_node = calculate_received_metrics(copy.deepcopy(df_all_packets), timeframe=timeframe_param*1000, bins=10)
-        
+        received_metrics, received_metrics_node = calculate_received_metrics(copy.deepcopy(df_all_packets), timeframe=timeframe_param*1000, bins=10)        
         
         #for network
         network_df['received_metric'] = received_metrics 
@@ -178,18 +185,6 @@ def packet_metric_scheduler():
         # Step 2 - when you have the result convert your dataframe to a dictionary so it can be sent as json
         pc_metric_node_dict = pc_metric_node.to_dict("records")
            
-        #Step 4 - Calculate metric for specific node
-        for node in range(2,8):
-
-            #Step 4.1 calculate metric for a specific node
-            #pc_node_metrics = calculate_parent_change_node_metrics(df_all_packets, timeframe=60000, bins=10, node=node)
-            #Step 4.2 Convert calculated metric to dict
-            #pc_node_metrics_dict = pc_node_metrics.to_dict("records")
-            #Step 4.3 Put your metric dict for node level here in this format node_df[node][owner_tag] = metric_dict 
-            #node_df[node]['pc_metric_node'] = pc_node_metrics_dict
-
-            pass
-
 
        
         """ ########### Place calcs above here ########### """
@@ -291,11 +286,8 @@ def topology_event_scheduler():
         # This dataframe represents all historical packets
         df_all_topo_packets = topo_stream.flush_stream().copy(deep=True)
 
-        # Consider moving these below logic to a util
-        df_all_topo_packets = df_all_topo_packets[['node','role','parent']]
-        df_all_topo_packets = df_all_topo_packets.fillna(value={'role':'sensor'})
-        df_all_topo_packets['direct_parent'] = [l[0] for l in df_all_topo_packets['parent'] if len(l) > 0].copy()
-        topo_df = df_all_topo_packets.to_dict('records')
+        topo_df = topology_df_gen(copy.deepcopy(df_all_topo_packets))
+        topo_df = topo_df.to_dict('records')
 
         # Notify threads metric calculation is complete (db updates can resume)
         df_all_topo_packets =None #clear computed
@@ -312,7 +304,7 @@ def watch_packetlogs() -> None:
         while is_calculating_packet.is_set():
             time.sleep(5)
 
-        global last_packet_id, packet_stream, last_packet_ids
+        global last_packet_id, packet_stream, sessionid
 
         # Notify threads data update is active
         is_updating_packet.set()
@@ -320,8 +312,8 @@ def watch_packetlogs() -> None:
         # Query 1: Check the packetlogs for each node collection and get new document starting from last result
         data_list = []
         for name in node_collection_names:
-            data, id_max = client.find_by_pagination(
-                collection_name=name, last_id=last_packet_id.get(name), page_size=10
+            data, id_max= client.find_by_pagination(
+                collection_name=name, last_id=last_packet_id.get(name), page_size=10, sessionid=sessionid
             )
             data_list.append(data)
             last_packet_id[name] = id_max
@@ -354,14 +346,14 @@ def watch_metalogs() -> None:
         while is_calculating_meta.is_set():
             time.sleep(15)
 
-        global last_meta_id, meta_stream
+        global last_meta_id, meta_stream, sessionid
 
         # Notify threads data update is active
         is_updating_meta.set()
-
+        
         # Query 2: Check the metalog collection and get new document starting from last result
         data, id_max = client.find_by_pagination(
-            collection_name="metalogs", last_id=last_meta_id, page_size=10
+            collection_name="metalogs", last_id=last_meta_id, page_size=10, sessionid=sessionid
         )
 
         if data is None:
@@ -393,9 +385,11 @@ def watch_topology() -> None:
         is_updating_topo.set()
 
         #print("Topology data update in progress")
+        global sessionid
+        sessionid = client.find_by_session(collection_name="topology", sessionid=None)
 
         data, id_max = client.find_by_pagination(
-            collection_name="topology", last_id = None, page_size=10
+            collection_name="topology", last_id = None, page_size=10, sessionid=sessionid
         )
 
         if data is None:
@@ -503,11 +497,13 @@ meta_scheduler_watch_thread = threading.Thread(target=meta_metric_scheduler)
 topo_scheduler_thread = threading.Thread(target=topology_event_scheduler)
 
 # start db watchers
+topology_watch_thread.start() #topology is initiated first to identify session use
 packetlog_watch_thread.start()
 metalog_watch_thread.start()
-topology_watch_thread.start()
+
 
 # start metric schedulers
+topo_scheduler_thread.start()
 packet_scheduler_thread.start()
 meta_scheduler_watch_thread.start()
-topo_scheduler_thread.start()
+

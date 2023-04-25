@@ -67,7 +67,8 @@ def get_proc_status(pid):
         return proc_status
 
 
-def update_topology_dict(nodeid: int, log_dict):
+
+def update_topology_dict(nodeid: int, log_dict, log_type):
     """ Update the topology dictionary in runtime 
         If the node is not in memory, cre
         TODO: handle dynamic parent, when parent is unknown in advance, and when parent change during network ops
@@ -83,44 +84,36 @@ def update_topology_dict(nodeid: int, log_dict):
 
     else:
         topo = node_dict[nodeid]
-        # Assume the role is updated only one time, no change during run
-        # If Role is not updated, update based on packet direction
-        if (node_dict[nodeid].role == 'sensor'):
+        if log_type == 'packet':
+            if (node_dict[nodeid].role == 'sensor'): 
+
+                if topo.parent == nodeid:                                    
+                    if nodeid in (2,3):
+                        topo.parent = 1
+                    elif nodeid in (4,5):
+                        topo.parent = 2
+                    else:
+                        topo.parent = 3
+                    topo._last_updated = time.time()        
             
-            #Simulate a static topology, no ways to know direct parent as now
-            #May need to seek Omid help for mechanism to inform the direct parent
-            if topo.parent[0] == nodeid:
-                if nodeid in (2,3):
-                    topo.parent[0] = 1
-                elif nodeid in (4,5):
-                    topo.parent[0] = 2
-                else:
-                    topo.parent[0] = 3
-                topo._last_updated = time.time()
-          
-            if (log_dict['direction'] == 'recv'):
-                #Only server has receive message                
-                node_role = 'server'
-                topo.role = node_role
-                topo._last_updated = time.time()
+                if (log_dict['direction'] == 'recv'):
+                    #Only server has receive message                
+                    node_role = 'server'
+                    topo.role = node_role
+                    topo._last_updated = time.time()            
 
-
-            sender_id = int(log_dict['packet_id'][:3])
-            if (log_dict['direction'] == 'send') and (sender_id != nodeid):
-                #To implement list of parent nodes, when the sensor sends a packet differnt with its id
-                #it indicates that this sensor will be a parent for the packet sender, would append to list as we have timing order
-                if sender_id not in topo.parent:
-                    topo.parent.append(sender_id)
-                    topo._last_updated = time.time()
-
-            if topo._last_updated < time.time() + 1:
+        elif log_type == 'meta':
+            #update topo parent here
+            pass
+        
+        if topo._last_updated != None:            
+            if time.time() - topo._last_updated < 1:   
                 db_entry = topo.to_database()
-                res = collection.update_one({"node": nodeid}, 
-                                            {"$set": db_entry}).acknowledged
-            
+                res = collection.find_one_and_update({"node": nodeid}, {"$set": db_entry}, 
+                                                     sort=[('_id', -1)], return_document=True)
+                
     return res
 
-delete_all_collections(client) #to refresh db after each DAS run 
 
 while not proc.poll():
     time.sleep(0)  # FIXME - delays input response by 1 second for readability
@@ -143,10 +136,8 @@ while not proc.poll():
         #Database operations        
         log_dict = log.to_database()
         #Update the topology runtime memory
-        if isinstance(log, PacketLog):
-            res = update_topology_dict(nodeid=int(log_dict['node']),log_dict=log_dict)          
-            #print(f"Updated result is {res}")
-        
+        res = update_topology_dict(nodeid=int(log_dict['node']),log_dict=log_dict, log_type=log.type)    
+        #print(f"Updated result is {res}")
 
         # if packet log collection = 'packetlogs' else 'metalogs' -> send to mongoDB
         collection = client.get_collection(get_collection_name(log)) 

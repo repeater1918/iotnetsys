@@ -44,7 +44,7 @@ def layout(nodeid):
 
 #Callback
 
-@dash.callback( Output(f"graph-receivedpackets-node", "figure"),
+@dash.callback(Output(f"graph-receivedpackets-node", "figure"),
 Output(f"graph-queueloss-node", "figure"),
 Output(f"graph-e2e-node", "figure"),
 Output(f"graph-deadloss-node", "figure"),

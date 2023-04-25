@@ -64,12 +64,12 @@ def topology_update(elements, layout, pathname):
         if v['role'] == 'server':
             roots.add(f"{v['node']}")
 
-        ele.append({'node': v['node'], 'parent': v['direct_parent']})
+        ele.append({'node': v['node'], 'parent': v['parent']})
 
     data_tuple = [tuple(id.values()) for id in ele] #Convert to tuple for cytoscape drawing
     # Drawing nodes 
     nodes = [{'data': {'id': str(node), 'label': str(node)}} for node,_ in data_tuple ]
-     #Drawing links between source and its parent
+    #Drawing links between source and its parent
     edges = [
         {'data': {'source': str(source), 'target': str(target)}}
         for source, target in [tup for tup in data_tuple if str(tup[0]) not in roots] #Don't draw link for root node

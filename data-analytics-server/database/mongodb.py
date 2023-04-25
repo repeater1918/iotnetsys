@@ -3,6 +3,7 @@ import os
 from bson.objectid import ObjectId
 from typing import Union, Dict, Tuple, List
 
+
 MONGO_ATLAS_URI = f"mongodb+srv://{os.getenv('MONGO_USR')}:{os.getenv('MONGO_PWD')}@{os.getenv('MONGO_CLSTR')}"
 
 
@@ -51,15 +52,20 @@ class Database:
         return collection.delete_many(filter)
 
     def find_by_pagination(
-        self, collection_name: str, last_id: ObjectId, page_size: int
+        self, collection_name: str, last_id: ObjectId, page_size: int, sessionid=None
     ) -> Union[Tuple[None, None], Tuple[List[Dict]], ObjectId]:
         collection = self.get_collection(collection_name)
-
+        
+        #print(f"Getting data from {collection_name} for this session {sessionid}")
+        if sessionid is None:
+            sessionid = collection.find().sort([('sessionid', pymongo.DESCENDING)]).limit(1)[0]['sessionid']
+        
         if last_id is None:
-            cursor = collection.find().limit(page_size)
+            cursor = collection.find({"sessionid":sessionid}).limit(page_size)
         else:
-            cursor = collection.find({"_id": {"$gt": last_id}}).limit(page_size)
-
+            cursor = collection.find({"_id": {"$gt": last_id}, 
+                                      "sessiondid": sessionid}).limit(page_size)
+        
         # Get the data
         data = [x for x in cursor]
 
@@ -71,3 +77,11 @@ class Database:
         last_id = max([x["_id"] for x in data])
 
         return data, last_id
+    
+    def find_by_session(self, collection_name: str, sessionid = None):
+        collection = self.get_collection(collection_name)
+
+        if sessionid is None:
+            sessionid = collection.find().sort([('sessionid', pymongo.DESCENDING)]).limit(1)[0]['sessionid']
+        
+        return sessionid

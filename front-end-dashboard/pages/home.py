@@ -79,7 +79,7 @@ def data_scheduler(n_intervals, pathname):
 
     #graph for received packets
     df_received = pd.DataFrame(api_data['received_metric'])
-    if len(api_data['queueloss_metric']) == 0:
+    if len(api_data['received_metric']) == 0:
         received_graph = get_receivedpackets_graph(is_empty=True)
     else:
         received_graph = get_receivedpackets_graph(df_received)

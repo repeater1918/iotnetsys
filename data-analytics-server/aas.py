@@ -157,7 +157,6 @@ def packet_metric_scheduler():
 
         try:
             # Nwe - to calculate dead loss (network level)
-            #Dang - temp fix for dl loss below, need to correct it before deployment
             deadloss_metric = calculate_dead_loss(copy.deepcopy(df_all_packets), timeframe=timeframe_param*1000, timeframe_deadline=timeframe_dls*1000, bins=10,nodeID=-1)
             deadloss_dict = deadloss_metric.to_dict("records")
             network_df['deadloss_metric'] = deadloss_dict 
@@ -295,10 +294,11 @@ def topology_event_scheduler():
 
         # This dataframe represents all historical packets
         df_all_topo_packets = topo_stream.flush_stream().copy(deep=True)
-
-        topo_df = topology_df_gen(copy.deepcopy(df_all_topo_packets))
-        topo_df = topo_df.to_dict('records')
-
+        try:
+            topo_df = topology_df_gen(copy.deepcopy(df_all_topo_packets))
+            topo_df = topo_df.to_dict('records')
+        except Exception as ex:
+            print(f"Error in topology df: {ex}")
         # Notify threads metric calculation is complete (db updates can resume)
         df_all_topo_packets =None #clear computed
         is_calculating_topo.clear()

@@ -31,7 +31,7 @@ def get_pdr_graph(data = None, is_init=False, node_id=False, is_empty=False):
             y="successful_packets_precentage",
             hover_name="node",
             markers=True,
-            labels={"env_timestamp": "Time Invervals", "successful_packets_precentage": "Percentage Successful"},
+            labels={"env_timestamp": "Time Invervals", "successful_packets_precentage": "Packet Delivery Ratio (%)"},
         )
         pdr_graph = _style_graph(pdr_graph, data)
 
@@ -45,7 +45,7 @@ def get_pdr_graph(data = None, is_init=False, node_id=False, is_empty=False):
             y="successful_packets_precentage",
             title="Packet Delivery Ratios",
             markers=True,
-            labels={"env_timestamp": "Time Invervals", "successful_packets_precentage": "Successful Packet %"},
+            labels={"env_timestamp": "Time Invervals", "successful_packets_precentage": "Packet Delivery Ratio (%)"},
         )
     pdr_graph = _style_graph(pdr_graph, data)
 
@@ -58,9 +58,5 @@ def _get_place_holder():
 
 def _style_graph(fig, data: DataFrame = None):
     fig.update_layout({"plot_bgcolor": "#222", "paper_bgcolor": "#222"})
-
-    if data is not None:
-        fig.update_layout(yaxis2=dict(title='Total Packets', overlaying='y', side='right'))
-        fig.add_trace(go.Scatter(x=data['env_timestamp'], y=data['total_packets'], name='Total Packets', yaxis='y2'))
 
     return fig

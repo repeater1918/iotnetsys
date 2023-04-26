@@ -46,5 +46,6 @@ class PacketStream(object):
         ).reset_index(drop=True)
 
     def _prepare_data_types(self) -> None:
-        """Converts to correct datatypes"""
+        """Converts to correct datatypes and ids"""
         self.df_packet_hist["timestamp"] = self.df_packet_hist["timestamp"].astype(int)
+        self.df_packet_hist['unique_id'] = self.df_packet_hist['timestamp'].astype(str).str[:2] + self.df_packet_hist['packet_id']

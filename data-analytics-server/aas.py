@@ -312,11 +312,14 @@ def watch_packetlogs() -> None:
         # Query 1: Check the packetlogs for each node collection and get new document starting from last result
         data_list = []
         for name in node_collection_names:
+
             data, id_max= client.find_by_pagination(
                 collection_name=name, last_id=last_packet_id.get(name), page_size=10, sessionid=sessionid
             )
             data_list.append(data)
-            last_packet_id[name] = id_max
+            if id_max != None:
+                #if id_max is none, don't re-assign (it makes last_packet_id points to begining again)
+                last_packet_id[name] = id_max
 
         # Exclude None results
         data_list = [item for item in data_list if item != None]

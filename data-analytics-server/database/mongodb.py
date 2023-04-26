@@ -64,7 +64,7 @@ class Database:
             cursor = collection.find({"sessionid":sessionid}).limit(page_size)
         else:
             cursor = collection.find({"_id": {"$gt": last_id}, 
-                                      "sessiondid": sessionid}).limit(page_size)
+                                      "sessionid": {'$eq': sessionid}}).limit(page_size)
         
         # Get the data
         data = [x for x in cursor]

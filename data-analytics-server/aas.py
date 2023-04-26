@@ -134,57 +134,60 @@ def packet_metric_scheduler():
 
         """ ########### Place calcs below here ########### """
 
-        # Step 1 + 2 - using all historical packets (df_all_packets) - calculate your metrics and return a dataframe
-        pdr_metric_dict, pdr_node_metric_dict = calculate_pdr_metrics(copy.deepcopy(df_all_packets), timeframe=60000, bins=10)
-        
-        # Step 3 - add a label to your data so when it reaches the front end we know who it belongs to
-        network_df['pdr_metric'] = pdr_metric_dict 
-
-        #Step 4 - Calculate metric for specific node
-        for node, data in pdr_node_metric_dict.items():
-            node_df[node]['pdr_metric'] = data
-            
+        try:
+            pdr_metric_dict, pdr_node_metric_dict = calculate_pdr_metrics(copy.deepcopy(df_all_packets), timeframe=60000, bins=10)
+            network_df['pdr_metric'] = pdr_metric_dict 
+            for node, data in pdr_node_metric_dict.items():
+                node_df[node]['pdr_metric'] = data
+        except Exception as ex:
+            print(f'Error in PDR METRIC calc: {ex}')    
 
         # Nwe - to calculate end-to-end delay (network level)
+        try:
+            e2e_metric = calculate_end_to_end_delay(copy.deepcopy(df_all_packets), timeframe=timeframe_param*1000, bins=10,nodeID=-1)
+            e2e_dict = e2e_metric.to_dict("records")
+            network_df['e2e_metric'] = e2e_dict
+            # Nwe - to calculate end-to-end delay (node level)
+            for node in range(2,8):
+                e2e_node_metric = calculate_end_to_end_delay(copy.deepcopy(df_all_packets), timeframe=timeframe_param*1000, bins=10,nodeID=node)
+                e2e_node_metric_dict = e2e_node_metric.to_dict("records")
+                node_df[node]['e2e_metric'] = e2e_node_metric_dict
+        except Exception as ex:
+            print(f'Error in E2E METRIC calc: {ex}')        
 
-        e2e_metric = calculate_end_to_end_delay(copy.deepcopy(df_all_packets), timeframe=timeframe_param*1000, bins=10,nodeID=-1)
-        e2e_dict = e2e_metric.to_dict("records")
-        network_df['e2e_metric'] = e2e_dict
-        # Nwe - to calculate end-to-end delay (node level)
-        for node in range(2,8):
-            e2e_node_metric = calculate_end_to_end_delay(copy.deepcopy(df_all_packets), timeframe=timeframe_param*1000, bins=10,nodeID=node)
-            e2e_node_metric_dict = e2e_node_metric.to_dict("records")
-            node_df[node]['e2e_metric'] = e2e_node_metric_dict
-            
+        try:
+            # Nwe - to calculate dead loss (network level)
+            #Dang - temp fix for dl loss below, need to correct it before deployment
+            deadloss_metric = calculate_dead_loss(copy.deepcopy(df_all_packets), timeframe=timeframe_param*1000, timeframe_deadline=timeframe_dls*1000, bins=10,nodeID=-1)
+            deadloss_dict = deadloss_metric.to_dict("records")
+            network_df['deadloss_metric'] = deadloss_dict 
+            # Nwe - to calculate dead loss (node level)
+            for node in range(2,8):
+                deadloss_node_metric = calculate_dead_loss(copy.deepcopy(df_all_packets), timeframe=timeframe_param*1000,timeframe_deadline=timeframe_dls*1000,bins=10,nodeID=node)
+                deadloss_node_metric_dict = deadloss_node_metric.to_dict("records")
+                node_df[node]['deadloss_metric'] = deadloss_node_metric_dict
+        except Exception as ex:
+            print(f'Error in DEADLINE LOSS METRIC calc: {ex}')        
 
-        # Nwe - to calculate dead loss (network level)
-        #Dang - temp fix for dl loss below, need to correct it before deployment
-        deadloss_metric = calculate_dead_loss(copy.deepcopy(df_all_packets), timeframe=timeframe_param*1000, timeframe_deadline=timeframe_dls*1000, bins=10,nodeID=-1)
-        deadloss_dict = deadloss_metric.to_dict("records")
-        network_df['deadloss_metric'] = deadloss_dict 
-        # Nwe - to calculate dead loss (node level)
-        for node in range(2,8):
-            deadloss_node_metric = calculate_dead_loss(copy.deepcopy(df_all_packets), timeframe=timeframe_param*1000,timeframe_deadline=timeframe_dls*1000,bins=10,nodeID=node)
-            deadloss_node_metric_dict = deadloss_node_metric.to_dict("records")
-            node_df[node]['deadloss_metric'] = deadloss_node_metric_dict
-            
+        try:
+            #calculate number of received packets
+            received_metrics, received_metrics_node = calculate_received_metrics(copy.deepcopy(df_all_packets), timeframe=timeframe_param*1000, bins=10)        
+            #for network
+            network_df['received_metric'] = received_metrics 
+            #for nodes
+            for node, data in received_metrics_node.items():
+                node_df[node]['received_metric'] = data
+        except Exception as ex:
+            print(f'Error in RECV PACKETS METRIC calc: {ex}')    
 
-        #calculate number of received packets
-        received_metrics, received_metrics_node = calculate_received_metrics(copy.deepcopy(df_all_packets), timeframe=timeframe_param*1000, bins=10)        
-        
-        #for network
-        network_df['received_metric'] = received_metrics 
-        #for nodes
-        for node, data in received_metrics_node.items():
-            node_df[node]['received_metric'] = data
-
-        pc_metric_network_int = calculate_parent_change_ntwk_metrics(df_all_packets, timeframe=60000, bins=10)
-        pc_metric_node = calculate_parent_change_node_metrics(df_all_packets, timeframe=60000, bins=10) #pc_metric is not working, with 0 in values ..
-        network_df["pc_metric_network"] = pc_metric_network_int
-
-        # Step 2 - when you have the result convert your dataframe to a dictionary so it can be sent as json
-        pc_metric_node_dict = pc_metric_node.to_dict("records")
-           
+        try:
+            pc_metric_network_int = calculate_parent_change_ntwk_metrics(df_all_packets, timeframe=60000, bins=10)
+            pc_metric_node = calculate_parent_change_node_metrics(df_all_packets, timeframe=60000, bins=10) #pc_metric is not working, with 0 in values ..
+            network_df["pc_metric_network"] = pc_metric_network_int
+            # Step 2 - when you have the result convert your dataframe to a dictionary so it can be sent as json
+            pc_metric_node_dict = pc_metric_node.to_dict("records")
+        except Exception as ex:
+            print(f'Error in PC METRIC calc: {ex}')       
 
        
         """ ########### Place calcs above here ########### """
@@ -225,37 +228,44 @@ def meta_metric_scheduler():
         df_all_meta_packets = meta_stream.flush_stream().copy(deep=True)
 
         """ ########### Place calcs below here ########### """
-        # Step 1 + 2 - using all historical packets (df_all_packets) - calculate your metrics and return a dataframe
-        net_icmp_metric, node_icmp_metric = calculate_icmp_metrics(copy.deepcopy(df_all_meta_packets))
-        # Step 3 - add a label to your data so when it reaches the front end we know who it belongs to
-        network_df['icmp_metric'] = net_icmp_metric        
-        #Step 4 - Calculate metric for specific node
-        #Step 4 - Calculate metric for specific node
-        for node, data in node_icmp_metric.items():
-            node_df[node]['icmp_metric'] = data
-   
-        #calculate queue loss
-        queueloss_network, queueloss_node = calculate_queue_loss(copy.deepcopy(df_all_meta_packets))
-        #for network
-        network_df['queueloss_metric'] = queueloss_network
-        #for each node
-        for node, data in queueloss_node.items():
-            node_df[node]['queueloss_metric'] = data
+        try:
+            # Step 1 + 2 - using all historical packets (df_all_packets) - calculate your metrics and return a dataframe
+            net_icmp_metric, node_icmp_metric = calculate_icmp_metrics(copy.deepcopy(df_all_meta_packets))
+            # Step 3 - add a label to your data so when it reaches the front end we know who it belongs to
+            network_df['icmp_metric'] = net_icmp_metric        
+            #Step 4 - Calculate metric for specific node
+            for node, data in node_icmp_metric.items():
+                node_df[node]['icmp_metric'] = data
+        except Exception as ex:
+            print(f'Error in ICMP METRIC calc: {ex}')
 
-        # Step 1 - using all historical packets (df_all_packets) - calculate your metrics and return a dataframe
-        energy_cons_metric = calculate_energy_cons_metrics(copy.deepcopy(df_all_meta_packets))
-        # Step 2 - when you have the result convert your dataframe to a dictionary so it can be sent as json
-        energy_metric_dict = energy_cons_metric.to_dict("records")
-        # Step 3 - pass your dictionary data into the on_packet_data_update to send it to the front-end
-        network_df['energy_cons_metric'] = energy_metric_dict
+        try:        
+            #calculate queue loss
+            queueloss_network, queueloss_node = calculate_queue_loss(copy.deepcopy(df_all_meta_packets))
+            #for network
+            network_df['queueloss_metric'] = queueloss_network
+            #for each node
+            for node, data in queueloss_node.items():
+                node_df[node]['queueloss_metric'] = data
+        except Exception as ex:
+            print(f'Error in QUEUE LOSS METRIC calc: {ex}')
 
-        #Step 4 - Calculate metric for specific node
-        for node in range(2,8):
-          energy_node = df_all_meta_packets.loc[df_all_meta_packets['node']==node].copy()
-          energy_cons_node_metrics = calculate_energy_cons_metrics(energy_node)
-          energy_cons_node_metrics_dict = energy_cons_node_metrics.to_dict("records")
-          node_df[node]['energy_cons_metric'] = energy_cons_node_metrics_dict 
-          
+        try:    
+            # Step 1 - using all historical packets (df_all_packets) - calculate your metrics and return a dataframe
+            energy_cons_metric = calculate_energy_cons_metrics(copy.deepcopy(df_all_meta_packets))
+            # Step 2 - when you have the result convert your dataframe to a dictionary so it can be sent as json
+            energy_metric_dict = energy_cons_metric.to_dict("records")
+            # Step 3 - pass your dictionary data into the on_packet_data_update to send it to the front-end
+            network_df['energy_cons_metric'] = energy_metric_dict
+
+            #Step 4 - Calculate metric for specific node
+            for node in range(2,8):
+                energy_node = df_all_meta_packets.loc[df_all_meta_packets['node']==node].copy()
+                energy_cons_node_metrics = calculate_energy_cons_metrics(energy_node)
+                energy_cons_node_metrics_dict = energy_cons_node_metrics.to_dict("records")
+                node_df[node]['energy_cons_metric'] = energy_cons_node_metrics_dict 
+        except Exception as ex:
+            print(f'Error in ENERGY CONS METRIC calc: {ex}')
 
         
         """ ########### Place calcs above here ########### """

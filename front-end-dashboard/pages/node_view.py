@@ -9,7 +9,8 @@ from views.graph_icmp_packets import get_icmp_graph
 from views.graph_pdr import get_pdr_graph
 from views.graph_queue_loss import get_queueloss_graph
 from views.graph_received_packets import get_receivedpackets_graph
-from utils.data_connectors import get_node_data
+from views.graph_hop_count import get_hop_cnt_graph
+from utils.data_connectors import get_node_data, get_topo_data
 import plotly.graph_objects as go
 import pandas as pd
 from datetime import datetime
@@ -32,7 +33,7 @@ def layout(nodeid):
             )),
         dbc.Row(
             [
-                dbc.Col(get_receivedpackets_graph(is_init=True, node_id=nodeid), md=6, style={"margin-top": "16px"}),
+                dbc.Col(get_hop_cnt_graph(is_init=True, node_id=nodeid), md=6, style={"margin-top": "16px"}),
                 dbc.Col(get_queueloss_graph(is_init=True, node_id=nodeid), md=6, style={"margin-top": "16px"}),
                 dbc.Col(graph_e2e_metric, md=6, style={"margin-top": "16px"}),
                 dbc.Col(graph_deadloss_metric, md=6, style={"margin-top": "16px"}),
@@ -49,7 +50,7 @@ def layout(nodeid):
 
 #Callback
 
-@dash.callback(Output(f"graph-receivedpackets-node", "figure"),
+@dash.callback(Output(f"graph-hopcount-node", "figure"),
 Output(f"graph-queueloss-node", "figure"),
 Output(f"graph-e2e-node", "figure"),
 Output(f"graph-deadloss-node", "figure"),
@@ -86,11 +87,12 @@ def update_graph(pathname, n_clicks):
     else:
         queueloss_graph = get_queueloss_graph(df_queueloss, node_id=nodeid)
     
-    df_received = pd.DataFrame(api_data['received_metric'])
-    if len(api_data['received_metric']) == 0:
-        received_graph = get_receivedpackets_graph(is_empty=True, node_id=nodeid)
+    topo_api_data = get_topo_data()
+    df_topo = pd.DataFrame(topo_api_data)
+    if len(topo_api_data) == 0:
+        hopcount_graph = get_hop_cnt_graph(is_empty=True, node_id=nodeid)[0]
     else:
-        received_graph = get_receivedpackets_graph(df_received, node_id = 1)
+        hopcount_graph = get_hop_cnt_graph(df_topo, node_id = nodeid)[0]
 
     # Nwe - for end to end delay
     df_e2e = pd.DataFrame(api_data['e2e_metric'])
@@ -178,3 +180,4 @@ def update_graph(pathname, n_clicks):
     data_update = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
     return (received_graph, queueloss_graph, e2e_graph,deadloss_graph,graph_duty_cycle, pdr_graph, icmp_graph, pc_node_graph, f"Last Updated: {data_update}")
+

@@ -1,6 +1,7 @@
 import dash_bootstrap_components as dbc
-from dash import html
+from dash import html, Output, Input
 import dash
+from utils.data_connectors import get_topo_data
 
 navbar = dbc.Navbar(
     children=[
@@ -49,17 +50,7 @@ navbar = dbc.Navbar(
 )
 
 
-node_typology = dbc.ListGroup(children=
-    [
-        dbc.ListGroupItem("IoT Node", className="typology-lvl1"),
-        dbc.ListGroupItem("Node 2", className="typology-lvl2", href="/node_view/2"),
-        dbc.ListGroupItem("Node 4", className="typology-lvl3", href="/node_view/4"),
-        dbc.ListGroupItem("Node 5", className="typology-lvl3", href="/node_view/5"),
-        dbc.ListGroupItem("Node 3", className="typology-lvl2", href="/node_view/3"),
-        dbc.ListGroupItem("Node 6", className="typology-lvl3", href="/node_view/6"),
-        dbc.ListGroupItem("Node 7", className="typology-lvl3", href="/node_view/7"),
-    ],
-)
+node_typology = dbc.ListGroup(id='node_nav', children=[],)
 
 timeframe_selector = html.Div(children=
     [
@@ -82,6 +73,27 @@ timeframe_selector = html.Div(children=
                 {"label": "6hr", "value": "21600"},
             ],
         ),
+        dbc.Label("Deadline Loss Limit", style={'margin-top':'2.5rem'},),
+        dbc.Select(
+            id="dropdown-dlloss",
+            placeholder="1sec",
+            options=[
+                {"label": "25ms", "value": "25"},
+                {"label": "50ms", "value": "50"},
+                {"label": "75ms", "value": "75"},
+                {"label": "100ms", "value": "100"},
+                {"label": "150ms", "value": "150"},
+                {"label": "200ms", "value": "200"},
+                {"label": "300ms", "value": "300"},
+                {"label": "400ms", "value": "400"},
+                {"label": "500ms", "value": "500"},
+                {"label": "1sec", "value": "1000"},
+                {"label": "2sec", "value": "2000"},
+                {"label": "5sec", "value": "5000"},
+                {"label": "10sec", "value": "10000"},
+                {"label": "20sec", "value": "20000"},
+            ],
+        ),
     ],
     className="timeframe-menu",
 )
@@ -94,10 +106,31 @@ main_page_heading = dbc.Row(
                 dbc.Col(html.Div("Network Level Metrics"), style={'text-align': 'right'}),
             ], class_name='page-heading')
 
+
 def top_page_heading(head_msg="Network Level"):
-        return (
-                dbc.Row([
-                    dbc.Col(html.Div(head_msg)),
-                    dbc.Col(html.Div(f"{head_msg} Metrics"), style={'text-align': 'right'})], class_name='page-heading'),
-                dbc.Row(dbc.Col(html.Div(children=dash.page_container)))                                        
-                )
+    return (
+            dbc.Row([
+                dbc.Col(html.Div(head_msg)),
+                dbc.Col(html.Div(f"{head_msg} Metrics"), style={'text-align': 'right'})], class_name='page-heading'),
+            dbc.Row(dbc.Col(html.Div(children=dash.page_container)))                                        
+            )
+
+
+@dash.callback(
+        Output('node_nav', 'children'),
+        [Input('node_nav','children'),
+         Input("interval-component", "n_intervals"),]
+        )
+def node_nav_callback(in_nav, n):        
+
+    servers = get_topo_data(query="node_parent")
+    nav = []
+    if len(servers) > 0:
+        for v in servers:
+            nav.append(dbc.ListGroupItem(f"Edge Server (Node {v})", className="typology-lvl1", href="/"))
+
+    sensors = get_topo_data(query="node_sensor")
+    for i in sensors:
+            nav.append(dbc.ListGroupItem(f"IoT Node {i}", className="typology-lvl2", href=f"/node_view/{i}"))   
+
+    return nav

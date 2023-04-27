@@ -4,7 +4,7 @@ from typing import Tuple
 
 def calculate_queue_loss(df: pd.DataFrame) -> Tuple[dict, dict]:
     queueloss_network = df.loc[df['sub_type'] == 'drop'].drop('_id', axis=1).copy()
-    queueloss_network['env_timestamp'] = queueloss_network['env_timestamp'].astype(str)
+    queueloss_network['env_timestamp'] = queueloss_network['env_timestamp'].dt.strftime("%H:%M:%S").astype(str) 
     queueloss_network_dict = queueloss_network.to_dict('records')
 
     #for nodes

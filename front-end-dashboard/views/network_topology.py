@@ -2,29 +2,8 @@ from dash import Dash, html, Input, Output, State
 import dash_cytoscape as cyto
 import dash_bootstrap_components as dbc
 import dash
+from utils.data_connectors import get_topo_data
 
-#Static topology. Fix me: handle message from AAS api
-#The dict returned from AAS in the below format
-topology_data = [{'node': 2, 'sub_type_value': 1}, 
-                {'node': 3, 'sub_type_value': 1}, 
-                {'node': 5, 'sub_type_value': 2}, 
-                {'node': 4, 'sub_type_value': 2}, 
-                {'node': 6, 'sub_type_value': 3}, 
-                {'node': 1, 'sub_type_value': 1}]
-
-data_tuple = [tuple(id.values()) for id in topology_data] #Convert to tuple for cytoscape drawing
-
-#Drawing node 
-nodes = [
-    {'data': {'id': str(node), 'label': str(node)}}
-      for node,_ in data_tuple    
-    ]
-
-#Drawing links between source and its parent
-edges = [
-    {'data': {'source': str(source), 'target': str(target)}}
-      for source, target in [tup for tup in data_tuple if tup[0] != tup[1]] #Don't draw link for root node
-    ]
 
 default_stylesheet = [
     {   'selector': 'node',
@@ -47,27 +26,59 @@ default_stylesheet = [
 ]
 
 topo_graph = html.Div([
-      html.Div("Topology Diagram", className='graph-title'),
-      cyto.Cytoscape(
-          id='topology-graph',
-          layout={
-              'name': 'breadthfirst',
-              'roots': '[id = "1"]',
-              
-          },
-          elements=edges+nodes,
-          stylesheet=default_stylesheet,
-          style={'width': '100%', 'left': '25px','height': '450px', 'z-index': -1}
-      ),
-      dbc.Toast(
-            [html.P("", className="mb-0")],
-            id="topo-toast",                       
-            dismissable=True,
-            is_open=False,
-            style={"position": "relative", "top": -440, "width": 250, "z-index": 2}
-        ),
+    html.Div("Topology Diagram", className='graph-title'),
+    cyto.Cytoscape(
+        id='topology-graph',
+        layout={'name': 'breadthfirst'},
+        elements=[],
+        stylesheet=default_stylesheet,
+        style={'width': '100%', 'left': '25px','height': '450px', 'z-index': -1},
+        
+    ),
+    dbc.Toast(
+        [html.P("", className="mb-0")],
+        id="topo-toast",                       
+        dismissable=True,
+        is_open=False,
+        style={"position": "relative", "top": -440, "width": 250, "z-index": 2}
+    ),
+    
+])
+global roots
+roots = set()
+@dash.callback(
+         Output("topology-graph", 'elements'),
+         Output('topology-graph','layout'),
+        [Input('topology-graph', 'elements'),
+         Input('topology-graph', 'layout'),
+         Input('url', 'pathname'),]
+        
+)
+def topology_update(elements, layout, pathname):
+    """Callback to extract topology and draw"""
+    ele = []
+    
+    topology_data = get_topo_data()
+    global roots
+    for v in topology_data:     
+        if v['role'] == 'server':
+            roots.add(f"{v['node']}")
+
+        ele.append({'node': v['node'], 'parent': v['parent']})
+
+    data_tuple = [tuple(id.values()) for id in ele] #Convert to tuple for cytoscape drawing
+    # Drawing nodes 
+    nodes = [{'data': {'id': str(node), 'label': str(node)}} for node,_ in data_tuple ]
+    #Drawing links between source and its parent
+    edges = [
+        {'data': {'source': str(source), 'target': str(target)}}
+        for source, target in [tup for tup in data_tuple if str(tup[0]) not in roots] #Don't draw link for root node
+        ]
+    layout['roots'] = '#'+',#'.join(roots)   
      
-    ])
+    return edges+nodes, layout
+
+
 
 @dash.callback(Output('topology-graph', 'stylesheet'),
                     Output('topo-toast', "is_open"),
@@ -76,6 +87,7 @@ topo_graph = html.Div([
                     Input('topology-graph', 'selectedNodeData'),
                     [State('topo-toast', "is_open")])
 def displayTapNodeData(data, is_open):
+        global roots
         if data:
             #Node data[0]['id'] selected
             selected_node = data[0]['id']
@@ -86,12 +98,14 @@ def displayTapNodeData(data, is_open):
                     'background-color': "green",                 
                 }
             }]
-            toast_hdr = [html.P(f"Node {selected_node}", className="mb-0", style={"color": "white"})]
-            toast_child = [html.P("My information is ....", className="mb-0"),]
+            toast_hdr = [html.P(f"Node {selected_node}", className="mb-0", style={"color": "white"})]            
             is_open = True
-
-            if selected_node != '1':
+            
+            if str(selected_node) not in roots:
+                toast_child = [html.P("My information is ... ", className="mb-0"),]
                 toast_child.append(dbc.Button("Go to node view", size="sm mt-2", href=f"/node_view/{selected_node}"))
+            else:
+                 toast_child = [html.P("I'm edge server", className="mb-0"),]
 
             
         else: 

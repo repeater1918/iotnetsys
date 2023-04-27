@@ -34,9 +34,25 @@ def get_node_data(nodeid):
     #print ("Cache updated at ", datetime.now())
     return result_dict
 
+
+def get_topo_data(query = None):
+    res = requests.get(AAS_URI+f"topo_data/?q={query}")
+    if res.status_code == 200:
+        res = res.json()
+    else:
+        res = []
+    return res 
+
 def send_timeframe(milliseconds: int):
     result_dict = {'timeframe': milliseconds}
     res = requests.post(AAS_URI+f"api/timeframe", json=result_dict) 
+    print(res.status_code)
+    return res
+    # TODO error management
+
+def send_dlloss(milliseconds: int):
+    result_dict = {'timeframe': milliseconds}
+    res = requests.post(AAS_URI+f"api/timeframe_dls", json=result_dict) 
     print(res.status_code)
     return res
     # TODO error management

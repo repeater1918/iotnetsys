@@ -79,7 +79,7 @@ def data_scheduler(n_intervals, pathname):
 
     #graph for received packets
     df_received = pd.DataFrame(api_data['received_metric'])
-    if len(api_data['queueloss_metric']) == 0:
+    if len(api_data['received_metric']) == 0:
         received_graph = get_receivedpackets_graph(is_empty=True)
     else:
         received_graph = get_receivedpackets_graph(df_received)
@@ -97,7 +97,6 @@ def data_scheduler(n_intervals, pathname):
             title="Average End to End Delay",
             labels={"env_timestamp": "Time Invervals", "average_delay": "Milli-Seconds"},
         )
-        #e2e_graph.update_traces(marker_color="green")
         e2e_graph.update_traces(line_color='blue')
 
     # Nwe - for deadloss
@@ -113,7 +112,6 @@ def data_scheduler(n_intervals, pathname):
             labels={"env_timestamp": "Time Invervals", "deadloss_percent": "Deadline Loss Packets %"},
             
         )
-        #deadloss_graph.update_traces(marker_color="green")
         deadloss_graph.update_traces(line_color='blue') 
     
     df_energy = pd.DataFrame(api_data['energy_cons_metric'])

@@ -20,14 +20,14 @@ from dotenv import load_dotenv
 dotenv_path = Path(Path(__file__).parent.resolve(), "../.envs/mongodb.env")
 load_dotenv(dotenv_path=dotenv_path)
 
-import subprocess
+import subprocess, os
 import time
 from datetime import datetime
 
 import psutil
 from database.mongodb import Database
-from models import parse_incoming
-from utils import get_collection_name
+from models import parse_incoming, PacketLog, TopologyLog
+from utils import get_collection_name, delete_all_collections
 
 dotenv_path = Path(Path(__file__).parent.resolve(), "../.envs/mongodb.env")
 load_dotenv(dotenv_path=dotenv_path)
@@ -36,9 +36,10 @@ load_dotenv(dotenv_path=dotenv_path)
 client = Database(database_name="iotnetsys")
 
 # Instruct python to run Omid's script and pipe the results to this program
-target_script = (
-    "emitter.bat"  # NOTE: change this to emitter.sh if you are working in linux/mac
-)
+target_script = ("emitter.sh")
+#Windows os will use below script
+if os.name == 'nt':
+    target_script = ("emitter.bat")
 
 proc = subprocess.Popen(
     [target_script],
@@ -50,7 +51,8 @@ proc = subprocess.Popen(
 
 PID = proc.pid
 START_TIMESTAMP = datetime.utcnow()
-
+global node_dict
+node_dict = {}
 
 def get_proc_status(pid):
     """Get the status of the process which has the specified process id."""
@@ -65,8 +67,56 @@ def get_proc_status(pid):
         return proc_status
 
 
+
+def update_topology_dict(nodeid: int, log_dict, log_type):
+    """ Update the topology dictionary in runtime 
+        If the node is not in memory, cre
+        TODO: handle dynamic parent, when parent is unknown in advance, and when parent change during network ops
+    """
+    global node_dict
+    collection = client.get_collection('topology')
+    res = 'No update'
+    if nodeid not in node_dict.keys():        
+        topo = TopologyLog(nodeid, "Generated from Packet event")
+        node_dict[nodeid] = topo
+        db_entry = topo.to_database()
+        res = collection.insert_one(db_entry).inserted_id
+
+    else:
+        topo = node_dict[nodeid]
+        if log_type == 'packet':
+            if (node_dict[nodeid].role == 'sensor'): 
+
+                if topo.parent == nodeid:                                    
+                    if nodeid in (2,3):
+                        topo.parent = 1
+                    elif nodeid in (4,5):
+                        topo.parent = 2
+                    else:
+                        topo.parent = 3
+                    topo._last_updated = time.time()        
+            
+                if (log_dict['direction'] == 'recv'):
+                    #Only server has receive message                
+                    node_role = 'server'
+                    topo.role = node_role
+                    topo._last_updated = time.time()            
+
+        elif log_type == 'meta':
+            #update topo parent here
+            pass
+        
+        if topo._last_updated != None:            
+            if time.time() - topo._last_updated < 1:   
+                db_entry = topo.to_database()
+                res = collection.find_one_and_update({"node": nodeid}, {"$set": db_entry}, 
+                                                     sort=[('_id', -1)], return_document=True)
+                
+    return res
+
+
 while not proc.poll():
-    time.sleep(1)  # FIXME - delays input response by 1 second for readability
+    time.sleep(0)  # FIXME - delays input response by 1 second for readability
 
     # read terminal input
     response = proc.stdout.readline().decode()
@@ -76,11 +126,24 @@ while not proc.poll():
         data = {"data": response}["data"]
         # Delegate object identification to models / inheritance
         log = parse_incoming(data, START_TIMESTAMP)
+        if log == None:
+            continue
+       
+        #Add node to topology runtime memory
+        if isinstance(log, TopologyLog):
+            node_dict[log.node] = log 
+
+        #Database operations        
+        log_dict = log.to_database()
+        #Update the topology runtime memory
+        res = update_topology_dict(nodeid=int(log_dict['node']),log_dict=log_dict, log_type=log.type)    
+        #print(f"Updated result is {res}")
+
         # if packet log collection = 'packetlogs' else 'metalogs' -> send to mongoDB
         collection = client.get_collection(get_collection_name(log)) 
-        _id = collection.insert_one(log.to_dict()).inserted_id
+        _id = collection.insert_one(log_dict).inserted_id
 
-        print(_id, log, get_collection_name(log))
+        print(_id, log_dict, get_collection_name(log))
 
     elif response == "":
         # Sad path or closure

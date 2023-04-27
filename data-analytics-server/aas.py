@@ -519,4 +519,3 @@ metalog_watch_thread.start()
 topo_scheduler_thread.start()
 packet_scheduler_thread.start()
 meta_scheduler_watch_thread.start()
-

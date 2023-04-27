@@ -13,7 +13,7 @@ from views.graph_queue_loss import get_queueloss_graph
 from views.graph_received_packets import get_receivedpackets_graph
 import pandas as pd
 from utils.data_connectors import get_network_data
-
+from datetime import datetime
 # from app import server
 
 dash.register_page(__name__, path="/")
@@ -24,6 +24,10 @@ graph_deadloss_metric = dcc.Graph(id="graph-deadloss", figure=px.bar(title="Dead
 
 layout = html.Div(
     children=[
+        dbc.Row(dbc.Col(
+            html.Div(dbc.Spinner(html.Div(id="loading-output")), className='loader-spinner'),
+            xs=12
+        )),
         dbc.Row(
             [
                 dbc.Col(get_receivedpackets_graph(is_init=True), md=6, style={"margin-top": "16px"}),
@@ -50,14 +54,15 @@ layout = html.Div(
     Output("graph_duty_cycle", "figure"),
     Output("graph-pdr", "figure"),
     Output("graph-icmp", "figure"),
-    [Input("interval-component", "n_intervals"),
-      Input('url', 'pathname')],)
-def data_scheduler(n_intervals, pathname):
+    Output("loading-output", "children"),
+[Input('url', 'pathname'), Input('refresh-dash', 'n_clicks')])
+def data_scheduler(pathname, n_clicks):
+    print(n_clicks)
+    if pathname != '/':
+        return dash.no_update
+
     api_data  = get_network_data()
-    if pathname == '/':
-        pass
-        # If data hasn't been udpate for my graph return an empty graph
-        #Using result from API directly
+
     df_pdr = pd.DataFrame(api_data['pdr_metric'])
     if len(api_data['pdr_metric']) == 0:
         pdr_graph = get_pdr_graph(is_empty=True)
@@ -136,5 +141,7 @@ def data_scheduler(n_intervals, pathname):
 
                 layout={"plot_bgcolor": "#222", "paper_bgcolor": "#222"},
             )
+    
+    data_update = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-    return (received_graph, queueloss_graph, e2e_graph, deadloss_graph, graph_duty_cycle, pdr_graph, icmp_graph)
+    return (received_graph, queueloss_graph, e2e_graph, deadloss_graph, graph_duty_cycle, pdr_graph, icmp_graph, f"Last Updated: {data_update}")

@@ -90,7 +90,17 @@ html, body {
     border-radius: 4px;
 }
 
-
+.refresh-btn {
+    padding-left: 0.25rem;
+    padding-right: 0.5rem;
+}
+.loader-spinner {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-width: 80px;
+    min-height: 48px;
+}
 
 a {
     text-decoration: none;

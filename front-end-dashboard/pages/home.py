@@ -50,14 +50,15 @@ layout = html.Div(
     Output("graph_duty_cycle", "figure"),
     Output("graph-pdr", "figure"),
     Output("graph-icmp", "figure"),
-    [Input("interval-component", "n_intervals"),
-      Input('url', 'pathname')],)
-def data_scheduler(n_intervals, pathname):
+    [Input('url', 'pathname'), Input('refresh-dash', 'n_clicks')])
+def data_scheduler(pathname, n_clicks):
+
+    if pathname != '/':
+        return dash.no_update
+
     api_data  = get_network_data()
-    if pathname == '/':
-        pass
-        # If data hasn't been udpate for my graph return an empty graph
-        #Using result from API directly
+   
+    # pdr metrics
     df_pdr = pd.DataFrame(api_data['pdr_metric'])
     if len(api_data['pdr_metric']) == 0:
         pdr_graph = get_pdr_graph(is_empty=True)
@@ -70,14 +71,14 @@ def data_scheduler(n_intervals, pathname):
     else:
         icmp_graph = get_icmp_graph(df_icmp)
         
-    #graph for queueloss
+    # graph for queue loss
     df_queueloss = pd.DataFrame(api_data['queueloss_metric'])
     if len(api_data['queueloss_metric']) == 0:
         queueloss_graph = get_queueloss_graph(is_empty=True)
     else:
         queueloss_graph = get_queueloss_graph(df_queueloss)
 
-    #graph for received packets
+    # graph for received packets
     df_received = pd.DataFrame(api_data['received_metric'])
     if len(api_data['received_metric']) == 0:
         received_graph = get_receivedpackets_graph(is_empty=True)

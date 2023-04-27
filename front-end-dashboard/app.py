@@ -91,7 +91,7 @@ def load_heading(pathname):
 )
 def set_timeframe(value):
     if value == None:
-        send_timeframe(60000) #default 1 min
+        send_timeframe(15000) #default to 15sec
     else:
         send_timeframe(value)
 

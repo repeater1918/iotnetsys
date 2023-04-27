@@ -52,14 +52,16 @@ Output(f"graph_duty_cycle-node", "figure"),
 Output(f"graph-pdr-node", "figure"),
 Output(f"graph-icmp-node", "figure"),
 Output(f"graph-pc-node", "figure"),
-[Input("interval-component", "n_intervals"),
-    Input('url', 'pathname')])
-def update_graph(n, pathname):
+[Input('url', 'pathname')])
+def update_graph(pathname):
+
+    if pathname.split('/')[1] != 'node_view':
+        return dash.no_update
+
     nodeid = int(pathname.split('/')[-1])
     api_data  = get_node_data(nodeid)
-    # If data hasn't been udpate for my graph return an empty graph
-    #Using result from API directly
-    
+     
+    # pdr metrics
     df_pdr = pd.DataFrame(api_data['pdr_metric'])
     if len(api_data['pdr_metric']) == 0:
         pdr_graph = get_pdr_graph(is_empty=True, node_id=nodeid)
@@ -84,7 +86,7 @@ def update_graph(n, pathname):
     else:
         received_graph = get_receivedpackets_graph(df_received, node_id = 1)
 
-        # Nwe - for end to end delay
+    # Nwe - for end to end delay
     df_e2e = pd.DataFrame(api_data['e2e_metric'])
     if len(api_data['e2e_metric']) == 0:
         e2e_graph = px.line(title="Average End to End Delay")

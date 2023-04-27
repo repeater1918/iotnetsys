@@ -20,6 +20,11 @@ navbar = dbc.Navbar(
                 ),
                 dbc.Row(
                     [
+                        dbc.Col(html.Div(id='refresh-dash', children=[
+                            html.I(className="bi bi-arrow-clockwise refresh-button"),
+                            dbc.NavItem(dbc.NavLink("Refresh Dashboard", style={'cursor':'pointer'}))], className='refresh-section'),
+                            width="auto"
+                        ),
                         dbc.Col(
                             dbc.NavItem(dbc.NavLink("Node View", href="/node_view")),
                             width="auto",

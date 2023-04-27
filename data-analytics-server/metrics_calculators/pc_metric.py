@@ -1,41 +1,32 @@
 import numpy as np
 import pandas as pd
 
-def calculate_parent_change_ntwk_metrics(df: pd.DataFrame, timeframe: int, bins: int) -> int:
+def calculate_parent_change_ntwk_metrics(df: pd.DataFrame) -> dict:
     """
     For the given timeframe, return an int showing the total number of parent changes.
     """
-    # get packets only within timeframe (miliseconds)
-    # get latest timestamp
-    timestamp_limit = df['timestamp'].max() - (timeframe * bins)
-    # filter down to relevant timeframe
-    df = df[df['timestamp'] >= timestamp_limit]
+    # filter down to relevant meta packets (parent changes)
+    df = df.loc[df['sub_type'] == 'parent'].copy()
+    # calc network metric dictionary with network result
+    network_parent_changes = len(df)
+    #  format as required
+    ntwk_result_dict = [{'network_parent_changes': network_parent_changes}]
 
-    network_parent_changes = len(df[df['log'].str.contains('parentChange')])
-
-    return network_parent_changes
+    return ntwk_result_dict
 
 
-def calculate_parent_change_node_metrics(df: pd.DataFrame, timeframe: int, bins: int) -> pd.DataFrame:
+def calculate_parent_change_node_metrics(df: pd.DataFrame) -> dict:
     """
     For the given timeframe, return a dataframe showing the total number of parent changes per node.
     """
-    # get packets only within timeframe (miliseconds)
-    # get latest timestamp
-    timestamp_limit = df['timestamp'].max() - (timeframe * bins)
-    # filter down to relevant timeframe
-    df = df[df['timestamp'] >= timestamp_limit]
-
+    # filter down to relevant meta packets (parent changes)
+    df = df.loc[df['sub_type'] == 'parent'].copy()
     # initialise counts for nodes 1 to 7
-    counts = {node_id: 0 for node_id in range(1, 8)}
+    df = df.groupby('node').agg({'_id': 'count'}).reset_index().rename(columns={'_id': 'total_parent_changes'})
+    #  format as required
+    node_result_dict = {}
+    for node in df['node'].unique():
+        node_result_dict[node] = df.loc[df['node'] == node].to_dict('records')
 
-    # iterate over each row in the filtered dataframe and update the counts
-    for index, row in df.iterrows():
-        node = row["node"]
-        if node in counts and "parentChange" in row["log"]:
-            counts[node] += 1
-
-    # create a new dataframe using the updated counts
-    node_parent_changes = pd.DataFrame(list(counts.items()), columns=["node", "parent_changes"])
-
-    return node_parent_changes
+    # target = {"1": {"pdr_metric": data}}
+    return node_result_dict

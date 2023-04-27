@@ -178,17 +178,7 @@ def packet_metric_scheduler():
                 node_df[node]['received_metric'] = data
         except Exception as ex:
             print(f'Error in RECV PACKETS METRIC calc: {ex}')    
-
-        try:
-            pc_metric_network_int = calculate_parent_change_ntwk_metrics(df_all_packets, timeframe=60000, bins=10)
-            pc_metric_node = calculate_parent_change_node_metrics(df_all_packets, timeframe=60000, bins=10) #pc_metric is not working, with 0 in values ..
-            network_df["pc_metric_network"] = pc_metric_network_int
-            # Step 2 - when you have the result convert your dataframe to a dictionary so it can be sent as json
-            pc_metric_node_dict = pc_metric_node.to_dict("records")
-        except Exception as ex:
-            print(f'Error in PC METRIC calc: {ex}')       
-
-       
+      
         """ ########### Place calcs above here ########### """
 
         # Notify threads metric calculation is complete (db updates can resume)
@@ -266,7 +256,15 @@ def meta_metric_scheduler():
         except Exception as ex:
             print(f'Error in ENERGY CONS METRIC calc: {ex}')
 
-        
+        try:
+            pc_metric_network_int = calculate_parent_change_ntwk_metrics(df_all_meta_packets)
+            network_df["pc_metric_network"] = pc_metric_network_int
+
+            pc_metric_node = calculate_parent_change_node_metrics(df_all_meta_packets)
+            for node, data in pc_metric_node.items():
+                node_df[node]['pc_metric_node'] = data
+        except Exception as ex:
+            print(f'Error in PC METRIC calc: {ex}')       
         """ ########### Place calcs above here ########### """
 
 

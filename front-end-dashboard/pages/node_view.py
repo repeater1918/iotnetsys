@@ -58,7 +58,7 @@ Output(f"graph-pc-node", "figure"),
     Input('url', 'pathname')])
 def update_graph(n, pathname):
     nodeid = int(pathname.split('/')[-1])
-    api_data  = get_node_data(nodeid)
+    api_data = get_node_data(nodeid)
     # If data hasn't been udpate for my graph return an empty graph
     #Using result from API directly
     
@@ -155,19 +155,20 @@ def update_graph(n, pathname):
 
                 layout={"plot_bgcolor": "#222", "paper_bgcolor": "#222"},
             )
-
+        
     df_pc_node = pd.DataFrame(api_data['pc_metric_node'])
     if len(api_data['pc_metric_node']) == 0:
-        pc_node_graph = px.bar(title="Parent Changes per Node")
+        pc_node_graph = px.bar(title=f"Parent Changes - Node {nodeid}")
     else:
         pc_node_graph = px.bar(
 
             df_pc_node,
             x="node",
-            y="parent_changes",
-            title="Parent Changes per Node",
-            labels={"node": "Node ID", "parent_changes": "Total Parent Changes"},
+            y="total_parent_changes",
+            title=f"Parent Changes - Node {nodeid}",
+            labels={"node": "Node ID", "total_parent_changes": "Total Parent Changes"},
         )
-        pc_node_graph.update_traces(marker_color="blue")
+        pc_node_graph.update_traces(marker_color="red")
+        pc_node_graph.update_xaxes(type="category")
 
     return (hopcount_graph, queueloss_graph, e2e_graph,deadloss_graph,graph_duty_cycle, pdr_graph, icmp_graph, pc_node_graph)

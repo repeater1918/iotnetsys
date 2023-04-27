@@ -20,9 +20,9 @@ navbar = dbc.Navbar(
                 ),
                 dbc.Row(
                     [
-                        dbc.Col(html.Div(id='refresh-dash', children=[
-                            html.I(className="bi bi-arrow-clockwise refresh-button"),
-                            dbc.NavItem(dbc.NavLink("Refresh Dashboard", style={'cursor':'pointer'}))], className='refresh-section'),
+                        dbc.Col(dbc.Button(id='refresh-dash', children=[
+                            html.I(className="bi bi-arrow-clockwise refresh-btn"),
+                            'Refresh']),
                             width="auto"
                         ),
                         dbc.Col(
@@ -55,7 +55,7 @@ navbar = dbc.Navbar(
 )
 
 
-node_typology = dbc.ListGroup(id='node_nav', children=[],)
+node_typology = dbc.ListGroup(id='node_nav', children=[html.Div()],)
 
 timeframe_selector = html.Div(children=
     [

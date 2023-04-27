@@ -13,7 +13,7 @@ from views.graph_queue_loss import get_queueloss_graph
 from views.graph_received_packets import get_receivedpackets_graph
 import pandas as pd
 from utils.data_connectors import get_network_data
-
+from datetime import datetime
 # from app import server
 
 dash.register_page(__name__, path="/")
@@ -24,6 +24,10 @@ graph_deadloss_metric = dcc.Graph(id="graph-deadloss", figure=px.bar(title="Dead
 
 layout = html.Div(
     children=[
+        dbc.Row(dbc.Col(
+            html.Div(dbc.Spinner(html.Div(id="loading-output")), className='loader-spinner'),
+            xs=12
+        )),
         dbc.Row(
             [
                 dbc.Col(get_receivedpackets_graph(is_init=True), md=6, style={"margin-top": "16px"}),
@@ -50,15 +54,15 @@ layout = html.Div(
     Output("graph_duty_cycle", "figure"),
     Output("graph-pdr", "figure"),
     Output("graph-icmp", "figure"),
-    [Input('url', 'pathname'), Input('refresh-dash', 'n_clicks')])
+    Output("loading-output", "children"),
+[Input('url', 'pathname'), Input('refresh-dash', 'n_clicks')])
 def data_scheduler(pathname, n_clicks):
-
+    print(n_clicks)
     if pathname != '/':
         return dash.no_update
 
     api_data  = get_network_data()
-   
-    # pdr metrics
+
     df_pdr = pd.DataFrame(api_data['pdr_metric'])
     if len(api_data['pdr_metric']) == 0:
         pdr_graph = get_pdr_graph(is_empty=True)
@@ -71,14 +75,14 @@ def data_scheduler(pathname, n_clicks):
     else:
         icmp_graph = get_icmp_graph(df_icmp)
         
-    # graph for queue loss
+    #graph for queueloss
     df_queueloss = pd.DataFrame(api_data['queueloss_metric'])
     if len(api_data['queueloss_metric']) == 0:
         queueloss_graph = get_queueloss_graph(is_empty=True)
     else:
         queueloss_graph = get_queueloss_graph(df_queueloss)
 
-    # graph for received packets
+    #graph for received packets
     df_received = pd.DataFrame(api_data['received_metric'])
     if len(api_data['received_metric']) == 0:
         received_graph = get_receivedpackets_graph(is_empty=True)
@@ -117,7 +121,7 @@ def data_scheduler(pathname, n_clicks):
     
     df_energy = pd.DataFrame(api_data['energy_cons_metric'])
     if len(api_data['energy_cons_metric']) == 0:
-        graph_duty_cycle = px.bar(title="Average energy consumption")
+        graph_duty_cycle = px.bar(title="Energy Consumption")
     else:
         graph_duty_cycle = go.Figure(
                 go.Indicator(
@@ -126,7 +130,7 @@ def data_scheduler(pathname, n_clicks):
 
                     domain={"x": [0, 1], "y": [0, 1]},
                     delta={"reference": 100},
-                    title={"text": "Average energy consumption"},
+                    title={"text": "Energy Consumption"},
                     gauge={
                         "axis": {"range": [None, 100]},
                         "steps": [
@@ -137,5 +141,7 @@ def data_scheduler(pathname, n_clicks):
 
                 layout={"plot_bgcolor": "#222", "paper_bgcolor": "#222"},
             )
+    
+    data_update = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-    return (received_graph, queueloss_graph, e2e_graph, deadloss_graph, graph_duty_cycle, pdr_graph, icmp_graph)
+    return (received_graph, queueloss_graph, e2e_graph, deadloss_graph, graph_duty_cycle, pdr_graph, icmp_graph, f"Last Updated: {data_update}")

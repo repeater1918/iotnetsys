@@ -12,6 +12,7 @@ from views.graph_received_packets import get_receivedpackets_graph
 from utils.data_connectors import get_node_data
 import plotly.graph_objects as go
 import pandas as pd
+from datetime import datetime
 
 dash.register_page(__name__, path_template='/node_view/<nodeid>')
 
@@ -25,6 +26,10 @@ def layout(nodeid):
 
     return html.Div(
     children=[
+        dbc.Row(dbc.Col(
+            html.Div(dbc.Spinner(html.Div(id="loading-output-node")), className='loader-spinner'),
+            xs=12
+            )),
         dbc.Row(
             [
                 dbc.Col(get_receivedpackets_graph(is_init=True, node_id=nodeid), md=6, style={"margin-top": "16px"}),
@@ -52,8 +57,9 @@ Output(f"graph_duty_cycle-node", "figure"),
 Output(f"graph-pdr-node", "figure"),
 Output(f"graph-icmp-node", "figure"),
 Output(f"graph-pc-node", "figure"),
-[Input('url', 'pathname')])
-def update_graph(pathname):
+Output("loading-output-node", "children"),
+[Input('url', 'pathname'), Input('refresh-dash', 'n_clicks')])
+def update_graph(pathname, n_clicks):
 
     if pathname.split('/')[1] != 'node_view':
         return dash.no_update
@@ -169,4 +175,6 @@ def update_graph(pathname):
         )
         pc_node_graph.update_traces(marker_color="blue")
 
-    return (received_graph, queueloss_graph, e2e_graph,deadloss_graph,graph_duty_cycle, pdr_graph, icmp_graph, pc_node_graph)
+    data_update = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    return (received_graph, queueloss_graph, e2e_graph,deadloss_graph,graph_duty_cycle, pdr_graph, icmp_graph, pc_node_graph, f"Last Updated: {data_update}")

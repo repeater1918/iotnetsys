@@ -15,7 +15,7 @@ graph_duty_cycle = html.Div(
                     value=0,
                     domain={"x": [0, 1], "y": [0, 1]},
                     delta={"reference": 1200},
-                    title={"text": "Energy Level"},
+                    title={"text": "Energy Consumption"},
                     gauge={
                         "axis": {"range": [None, 1200]},
                         "steps": [

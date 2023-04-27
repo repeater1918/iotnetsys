@@ -13,6 +13,7 @@ from views.graph_hop_count import get_hop_cnt_graph
 from utils.data_connectors import get_node_data, get_topo_data
 import plotly.graph_objects as go
 import pandas as pd
+from datetime import datetime
 
 dash.register_page(__name__, path_template='/node_view/<nodeid>')
 
@@ -26,6 +27,10 @@ def layout(nodeid):
 
     return html.Div(
     children=[
+        dbc.Row(dbc.Col(
+            html.Div(dbc.Spinner(html.Div(id="loading-output-node")), className='loader-spinner'),
+            xs=12
+            )),
         dbc.Row(
             [
                 dbc.Col(get_hop_cnt_graph(is_init=True, node_id=nodeid), md=6, style={"margin-top": "16px"}),
@@ -53,14 +58,17 @@ Output(f"graph_duty_cycle-node", "figure"),
 Output(f"graph-pdr-node", "figure"),
 Output(f"graph-icmp-node", "figure"),
 Output(f"graph-pc-node", "figure"),
-[Input("interval-component", "n_intervals"),
-    Input('url', 'pathname')])
-def update_graph(n, pathname):
+Output("loading-output-node", "children"),
+[Input('url', 'pathname'), Input('refresh-dash', 'n_clicks')])
+def update_graph(pathname, n_clicks):
+
+    if pathname.split('/')[1] != 'node_view':
+        return dash.no_update
+
     nodeid = int(pathname.split('/')[-1])
     api_data  = get_node_data(nodeid)
-    # If data hasn't been udpate for my graph return an empty graph
-    #Using result from API directly
-    
+     
+    # pdr metrics
     df_pdr = pd.DataFrame(api_data['pdr_metric'])
     if len(api_data['pdr_metric']) == 0:
         pdr_graph = get_pdr_graph(is_empty=True, node_id=nodeid)
@@ -86,7 +94,7 @@ def update_graph(n, pathname):
     else:
         hopcount_graph = get_hop_cnt_graph(df_topo, node_id = nodeid)[0]
 
-        # Nwe - for end to end delay
+    # Nwe - for end to end delay
     df_e2e = pd.DataFrame(api_data['e2e_metric'])
     if len(api_data['e2e_metric']) == 0:
         e2e_graph = px.line(title="Average End to End Delay")
@@ -169,4 +177,7 @@ def update_graph(n, pathname):
         )
         pc_node_graph.update_traces(marker_color="blue")
 
-    return (hopcount_graph, queueloss_graph, e2e_graph,deadloss_graph,graph_duty_cycle, pdr_graph, icmp_graph, pc_node_graph)
+    data_update = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    return (received_graph, queueloss_graph, e2e_graph,deadloss_graph,graph_duty_cycle, pdr_graph, icmp_graph, pc_node_graph, f"Last Updated: {data_update}")
+

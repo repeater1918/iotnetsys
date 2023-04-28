@@ -51,10 +51,10 @@ roots = set()
          Output('topology-graph','layout'),
         [Input('topology-graph', 'elements'),
          Input('topology-graph', 'layout'),
-         Input('url', 'pathname'),]
+         Input('url', 'pathname'), Input('refresh-dash', 'n_clicks')]
         
 )
-def topology_update(elements, layout, pathname):
+def topology_update(elements, layout, pathname, n_clicks):
     """Callback to extract topology and draw"""
     ele = []
     

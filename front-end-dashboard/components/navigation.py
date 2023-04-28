@@ -124,10 +124,10 @@ def top_page_heading(head_msg="Network Level"):
 @dash.callback(
         Output('node_nav', 'children'),
         [Input('node_nav','children'),
-         Input("interval-component", "n_intervals"),]
+         Input('refresh-dash', 'n_clicks'),]
         )
-def node_nav_callback(in_nav, n):        
-
+def node_nav_callback(in_nav, n_clicks):        
+    print(n_clicks)
     servers = get_topo_data(query="node_parent")
     nav = []
     if len(servers) > 0:

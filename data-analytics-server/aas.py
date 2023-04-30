@@ -181,6 +181,11 @@ def packet_metric_scheduler():
       
         """ ########### Place calcs above here ########### """
 
+        # Add timeframe & deadline loss to track which data used to calculate metrics
+        print(f"Packet metric calculated using this param data {timeframe_param}; deadline {timeframe_dls}")
+        network_df['user_data'] = {"data_timeframe": timeframe_param, "deadline_timeframe": timeframe_dls}
+        node_df['user_data'] = {"data_timeframe": timeframe_param, "deadline_timeframe": timeframe_dls}
+
         # Notify threads metric calculation is complete (db updates can resume)
         is_calculating_packet.clear()
 
@@ -266,7 +271,8 @@ def meta_metric_scheduler():
         except Exception as ex:
             print(f'Error in PC METRIC calc: {ex}')       
         """ ########### Place calcs above here ########### """
-
+        network_df['user_data'] = {"data_timeframe": timeframe_param, "deadline_timeframe": timeframe_dls}
+        node_df['user_data'] = {"data_timeframe": timeframe_param, "deadline_timeframe": timeframe_dls}
 
         # Notify threads metric calculation is complete (db updates can resume)
         is_calculating_meta.clear()
@@ -397,8 +403,9 @@ def watch_topology() -> None:
 
         #print("Topology data update in progress")
         global sessionid
-        sessionid = client.find_by_session(collection_name="topology", sessionid=None)
-
+        sessionid = client.find_session_id(collection_name="topology")
+         
+        
         data, id_max = client.find_by_pagination(
             collection_name="topology", last_id = None, page_size=10, sessionid=sessionid
         )
@@ -457,8 +464,12 @@ def send_data_to_front_end(response: List[Dict]):
 @app.get("/network_data/{metric_owner}")
 async def read_network_df(metric_owner):
     try:
-        response_df = network_df[metric_owner]
-    except:
+        if (network_df['user_data']['data_timeframe'] == timeframe_param) and (network_df['user_data']['deadline_timeframe'] == timeframe_dls):
+            response_df = network_df[metric_owner]
+        else:
+            raise Exception
+    except Exception as e:
+        print(f"API node data call has exception {e}")
         response_df = {}
         
     return response_df
@@ -473,10 +484,13 @@ async def read_node_df(metric_owner, node: int = 1):
         #node 1 is root already, no need to get it
         #print(f"API query for {node}")
         try:
-            response_df = node_df[node][metric_owner]
-            return response_df
+            if (node_df['user_data']['data_timeframe'] == timeframe_param) and (node_df['user_data']['deadline_timeframe'] == timeframe_dls):
+                response_df = node_df[node][metric_owner]
+                return response_df
+            else:
+                raise Exception
         except Exception as e:
-            print(e)
+            print(f"API node data call has exception {e}")
             response_df = {}
     
     return response_df
@@ -493,7 +507,8 @@ async def read_topo_db(q: Union[str, None] = None):
             res = [x['node'] for x in topo_df if x['role'] == 'server']
     else:
         res = topo_df
-
+    if len(topo_df) == 0:
+        print("No topology data")
     return res
 
 

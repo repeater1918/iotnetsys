@@ -58,7 +58,7 @@ class Database:
         
         #print(f"Getting data from {collection_name} for this session {sessionid}")
         if sessionid is None:
-            sessionid = collection.find().sort([('sessionid', pymongo.DESCENDING)]).limit(1)[0]['sessionid']
+            return None, None 
         
         if last_id is None:
             cursor = collection.find({"sessionid":sessionid}).limit(page_size)
@@ -78,10 +78,9 @@ class Database:
 
         return data, last_id
     
-    def find_by_session(self, collection_name: str, sessionid = None):
-        collection = self.get_collection(collection_name)
 
-        if sessionid is None:
-            sessionid = collection.find().sort([('sessionid', pymongo.DESCENDING)]).limit(1)[0]['sessionid']
+    def find_session_id(self, collection_name: str):
+        collection = self.get_collection(collection_name)
+        sessionid = collection.distinct('sessionid')[-1]  #Get last session id       
         
         return sessionid

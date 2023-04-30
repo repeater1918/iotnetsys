@@ -167,4 +167,4 @@ def update_graph(pathname, n_clicks):
 
     data_update = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-    return (received_graph, queueloss_graph, e2e_graph,deadloss_graph,graph_duty_cycle, pdr_graph, icmp_graph, pc_node_graph, f"Last Updated: {data_update}")
+    return (hopcount_graph, queueloss_graph, e2e_graph,deadloss_graph,graph_duty_cycle, pdr_graph, icmp_graph, pc_node_graph, f"Last Updated: {data_update}")

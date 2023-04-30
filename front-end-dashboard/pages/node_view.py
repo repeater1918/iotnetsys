@@ -126,20 +126,6 @@ def update_graph(pathname, n_clicks):
         )
         #deadloss_graph.update_traces(marker_color="green")
         deadloss_graph.update_traces(line_color='blue')
-
-    # df_queueloss = pd.DataFrame(api_data['queueloss_metric'])
-    # if len(api_data['queueloss_metric']) == 0:
-    #     queueloss_graph = px.bar(title="Queue loss")
-    # else:
-    #     queueloss_graph = px.bar(
-    #         df_queueloss,
-    #         x="node",
-    #         y="sub_type_value",
-    #         title="Queue loss",
-    #         labels={"node": "Node ID", "sub_type_value": "Number of dropped packets"},
-    #     )
-    # queueloss_graph.update_traces(marker_color='blue')
-    # queueloss_graph.update_xaxes(type='category')
         
     df_energy = pd.DataFrame(api_data['energy_cons_metric'])
     if len(api_data['energy_cons_metric']) == 0:
@@ -182,4 +168,3 @@ def update_graph(pathname, n_clicks):
     data_update = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
     return (hopcount_graph, queueloss_graph, e2e_graph,deadloss_graph,graph_duty_cycle, pdr_graph, icmp_graph, pc_node_graph, f"Last Updated: {data_update}")
-

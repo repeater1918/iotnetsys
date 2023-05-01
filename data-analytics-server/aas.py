@@ -461,7 +461,7 @@ def send_data_to_front_end(response: List[Dict]):
     update_event = datetime.now()
 
 
-@app.get("/network_data/{metric_owner}")
+@app.get("/api/networkmetric/{metric_owner}")
 async def read_network_df(metric_owner):
     try:
         if (network_df['user_data']['data_timeframe'] == timeframe_param) and (network_df['user_data']['deadline_timeframe'] == timeframe_dls):
@@ -476,7 +476,7 @@ async def read_network_df(metric_owner):
 
 
 #Query format for nodelv: AAS_URI/nodelv_data/pdr_metric?node=2 
-@app.get("/node_data/{metric_owner}")
+@app.get("/api/nodemetric/{metric_owner}")
 async def read_node_df(metric_owner, node: int = 1):
     global node_df
     response_df = {}
@@ -496,7 +496,7 @@ async def read_node_df(metric_owner, node: int = 1):
     return response_df
 
 
-@app.get("/topo_data/")
+@app.get("/api/topodata/")
 async def read_topo_db(q: Union[str, None] = None):
     supported_query = ['node_sensor', 'node_parent']
     

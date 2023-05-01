@@ -26,10 +26,6 @@ navbar = dbc.Navbar(
                             width="auto"
                         ),
                         dbc.Col(
-                            dbc.NavItem(dbc.NavLink("Node View", href="/node_view")),
-                            width="auto",
-                        ),
-                        dbc.Col(
                             dbc.DropdownMenu(
                                 children=[
                                     dbc.DropdownMenuItem("More Options", header=True),

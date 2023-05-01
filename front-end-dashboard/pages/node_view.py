@@ -34,17 +34,16 @@ def layout(nodeid):
             )),
         dbc.Row(
             [
-                dbc.Col(get_hop_cnt_graph(is_init=True, node_id=nodeid), md=6, style={"margin-top": "16px"}),
+                dbc.Col(get_pdr_graph(is_init=True, node_id=nodeid), md=6, style={"margin-top": "16px"}),
                 dbc.Col(get_queueloss_graph(is_init=True, node_id=nodeid), md=6, style={"margin-top": "16px"}),
                 dbc.Col(graph_e2e_metric, md=6, style={"margin-top": "16px"}),
                 dbc.Col(graph_deadloss_metric, md=6, style={"margin-top": "16px"}),
-                dbc.Col(get_pdr_graph(is_init=True, node_id=nodeid), md=6, style={"margin-top": "16px"}),
+                dbc.Col(get_hop_cnt_graph(is_init=True, node_id=nodeid), md=6, style={"margin-top": "16px"}),                
                 dbc.Col(get_icmp_graph(is_init=True, node_id=nodeid), md=6, style={"margin-top": "16px"}),
+                dbc.Col(graph_pc_node_metric, md=6, style={"margin-top": "16px"}),
+                dbc.Col(graph_duty_cycle, md=6, style={"margin-top": "16px"}),
             ]),
-        dbc.Row([
-                dbc.Col(graph_pc_node_metric, md=8, style={"margin-top": "16px"}),
-                dbc.Col(graph_duty_cycle, md=4, style={"margin-top": "16px"}),
-                ]) 
+       
         
     ]
 )

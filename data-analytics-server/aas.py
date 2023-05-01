@@ -142,8 +142,8 @@ def packet_metric_scheduler():
         except Exception as ex:
             print(f'Error in PDR METRIC calc: {ex}')    
 
-        # Nwe - to calculate end-to-end delay (network level)
         try:
+            # Nwe - to calculate end-to-end delay (network level)
             e2e_metric = calculate_end_to_end_delay(copy.deepcopy(df_all_packets), timeframe=timeframe_param*1000, bins=10,nodeID=-1)
             e2e_dict = e2e_metric.to_dict("records")
             network_df['e2e_metric'] = e2e_dict
@@ -157,12 +157,12 @@ def packet_metric_scheduler():
 
         try:
             # Nwe - to calculate dead loss (network level)
-            deadloss_metric = calculate_dead_loss(copy.deepcopy(df_all_packets), timeframe=timeframe_param*1000, timeframe_deadline=timeframe_dls*1000, bins=10,nodeID=-1)
+            deadloss_metric = calculate_dead_loss(copy.deepcopy(df_all_packets), timeframe=timeframe_param*1000, timeframe_deadline=timeframe_dls, bins=10,nodeID=-1)
             deadloss_dict = deadloss_metric.to_dict("records")
             network_df['deadloss_metric'] = deadloss_dict 
             # Nwe - to calculate dead loss (node level)
             for node in range(2,8):
-                deadloss_node_metric = calculate_dead_loss(copy.deepcopy(df_all_packets), timeframe=timeframe_param*1000,timeframe_deadline=timeframe_dls*1000,bins=10,nodeID=node)
+                deadloss_node_metric = calculate_dead_loss(copy.deepcopy(df_all_packets), timeframe=timeframe_param*1000,timeframe_deadline=timeframe_dls,bins=10,nodeID=node)
                 deadloss_node_metric_dict = deadloss_node_metric.to_dict("records")
                 node_df[node]['deadloss_metric'] = deadloss_node_metric_dict
         except Exception as ex:

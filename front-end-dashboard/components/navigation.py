@@ -62,7 +62,7 @@ timeframe_selector = html.Div(children=
         dbc.Label("Timeframe"),
         dbc.Select(
             id="dropdown-timeframe",
-            placeholder="15sec",
+            placeholder="choose (default 1min)",
             options=[
                 {"label": "5sec", "value": "5"},
                 {"label": "15sec", "value": "15"},
@@ -81,7 +81,7 @@ timeframe_selector = html.Div(children=
         dbc.Label("Deadline Loss Limit", style={'margin-top':'2.5rem'},),
         dbc.Select(
             id="dropdown-dlloss",
-            placeholder="1sec",
+            placeholder="choose (default 25ms)",
             options=[
                 {"label": "25ms", "value": "25"},
                 {"label": "50ms", "value": "50"},

@@ -23,10 +23,10 @@ load_dotenv(dotenv_path=dotenv_path)
 import subprocess, os
 import time
 from datetime import datetime
-
+import copy  
 import psutil
 from database.mongodb import Database
-from models import parse_incoming, PacketLog, TopologyLog
+from models import parse_incoming, PacketLog, TopologyLog, MetaLog
 from utils import get_collection_name, delete_all_collections
 
 dotenv_path = Path(Path(__file__).parent.resolve(), "../.envs/mongodb.env")
@@ -68,52 +68,71 @@ def get_proc_status(pid):
 
 
 
-def update_topology_dict(nodeid: int, log_dict, log_type):
-    """ Update the topology dictionary in runtime 
-        If the node is not in memory, cre
-        TODO: handle dynamic parent, when parent is unknown in advance, and when parent change during network ops
+def update_topology_dict(log, log_type):
+    """ Update the topology dictionary in runtime                 
     """
     global node_dict
     collection = client.get_collection('topology')
+    nodeid = int(log.node)
     res = 'No update'
-    if nodeid not in node_dict.keys():        
-        topo = TopologyLog(nodeid, "Generated from Packet event")
-        node_dict[nodeid] = topo
-        db_entry = topo.to_database()
-        res = collection.insert_one(db_entry).inserted_id
+    
+    if log_type == 'packet':
+        if nodeid not in node_dict.keys():
+            #Node doesnt exist in db 
+            topo = TopologyLog(nodeid, "Generated from Packet event", log.timestamp,log.sessionid, log.env_timestamp,log.log_fields)
+            topo.role = 'server' if log.direction == 'recv' else 'sensor'
+            topo.parent = nodeid                       
+            node_dict[nodeid] = topo   
+            #print("Insert to database object created automatically")            
+        else:
+            if (log.direction == 'recv'): 
+                if (node_dict[nodeid].role == 'sensor'):
+                    #Promote the sensor to be server                    
+                    node_dict[nodeid].role = 'server'                    
+                    node_dict[nodeid]._last_updated = time.time()                       
+                    #print("promote ev")
+                else:
+                    #Parent of the sender (sensor) is not init, assumed it's directly connected to server
+                    nodeid = int(log.packet_id[:3]) #pointer to sender
+                    if nodeid in node_dict.keys():      
+                        #sensor must be known, if not, it's a malicious packet                 
+                        if node_dict[nodeid].parent == nodeid: #parent value and nodeid are same (not init yet)
+                            node_dict[nodeid].parent = int(log.node)
+                            node_dict[nodeid]._last_updated = time.time()
+                            #print("updated parent for sensor from pkt ev")   
 
+    if log_type == 'topology':
+        #Handle current node
+        if nodeid not in node_dict.keys():
+            #Node doesnt exist, insert it
+            node_dict[nodeid] = log
+            #print(f"Insert a record from topology event to database")           
+        else:
+            #Node is known, hence just updated based on the log 
+            node_dict[nodeid] = log
+            node_dict[nodeid]._last_updated = time.time()   
+            #print(f"Update database with a topology info {log.log}")       
+
+        #Handle the parent from the message, since the topology is 2-way, the child inform the parent (or parent inform the child)               
+        if (log.parent not in node_dict.keys()):
+                parentid = log.parent
+                parent_topo = copy.deepcopy(log)
+                parent_topo.node = parentid
+                #Init the parent also, if it doesnt existw
+                node_dict[parentid] = parent_topo
+                res = collection.insert_one(parent_topo.to_database()).inserted_id 
+                   
+    topo = node_dict[nodeid]
+    if topo._last_updated != None:              
+        if time.time() - topo._last_updated < 2:   
+            db_entry = topo.to_database()
+            #print(f"Topology Database is updated with record {db_entry}")
+            res = collection.find_one_and_update({"node": nodeid}, {"$set": db_entry}, 
+                                                sort=[('_id', -1)], return_document=True)
     else:
-        topo = node_dict[nodeid]
-        if log_type == 'packet':
-            if (node_dict[nodeid].role == 'sensor'): 
+        res = collection.insert_one(topo.to_database()).inserted_id
 
-                if topo.parent == nodeid:                                    
-                    if nodeid in (2,3):
-                        topo.parent = 1
-                    elif nodeid in (4,5):
-                        topo.parent = 2
-                    else:
-                        topo.parent = 3
-                    topo._last_updated = time.time()        
-            
-                if (log_dict['direction'] == 'recv'):
-                    #Only server has receive message                
-                    node_role = 'server'
-                    topo.role = node_role
-                    topo._last_updated = time.time()            
-
-        elif log_type == 'meta':
-            #update topo parent here
-            pass
-        
-        if topo._last_updated != None:            
-            if time.time() - topo._last_updated < 1:   
-                db_entry = topo.to_database()
-                res = collection.find_one_and_update({"node": nodeid}, {"$set": db_entry}, 
-                                                     sort=[('_id', -1)], return_document=True)
-                
     return res
-
 
 while not proc.poll():
     time.sleep(0)  # FIXME - delays input response by 1 second for readability
@@ -127,23 +146,19 @@ while not proc.poll():
         # Delegate object identification to models / inheritance
         log = parse_incoming(data, START_TIMESTAMP)
         if log == None:
-            continue
-       
-        #Add node to topology runtime memory
-        if isinstance(log, TopologyLog):
-            node_dict[log.node] = log 
+            #print("skipped", response)
+            continue       
 
+        #Handle dynamic topology data
+        update_topology_dict(log=log, log_type=log.type)
+        
         #Database operations        
-        log_dict = log.to_database()
-        #Update the topology runtime memory
-        res = update_topology_dict(nodeid=int(log_dict['node']),log_dict=log_dict, log_type=log.type)    
-        #print(f"Updated result is {res}")
-
+        if isinstance(log, PacketLog) or isinstance(log, MetaLog):
         # if packet log collection = 'packetlogs' else 'metalogs' -> send to mongoDB
-        collection = client.get_collection(get_collection_name(log)) 
-        _id = collection.insert_one(log_dict).inserted_id
-
-        print(_id, log_dict, get_collection_name(log))
+            collection = client.get_collection(get_collection_name(log)) 
+            log_dict = log.to_database()
+            _id = collection.insert_one(log_dict).inserted_id
+            print(_id, log_dict, get_collection_name(log))
 
     elif response == "":
         # Sad path or closure

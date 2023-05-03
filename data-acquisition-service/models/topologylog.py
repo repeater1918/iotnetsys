@@ -5,12 +5,14 @@ from models.base import BaseLog
 
 
 class TopologyLog(BaseLog):
-    def __init__(self, timestamp: int, sessionid: datetime, node: int, log: str, env_timestamp: datetime, log_fields: list) -> None:
-        super().__init__(timestamp, node, log,  env_timestamp)
-        self.sessionid = sessionid
-        self.type = log_fields[4]
+    def __init__(self, node: int, log: str, timestamp: int, sessionid: datetime, env_timestamp: datetime, log_fields: list) -> None:
+        super().__init__(timestamp, node, log,  env_timestamp)        
         self.role = 'sensor'
-        self.parent = node
+        self.parent = log_fields[1]
+        self.sessionid = sessionid
+        self.type = 'topology'
+        if log_fields[2] != None:
+            self.node = log_fields[2]
         self._last_updated = None
 
     @staticmethod

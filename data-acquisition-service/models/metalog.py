@@ -10,9 +10,14 @@ class MetaLog(BaseLog):
         super().__init__(timestamp, node, log, env_timestamp)
         self.sessionid = sessionid
         self.type = log_fields[4]
-        sub_type, sub_type_value = (log_fields[0],log_fields[3])
+        sub_type, sub_type_value = (log_fields[0],log_fields[1])
+        sub_type_value2, sub_type_value3 = (log_fields[2], log_fields[3])
         self.sub_type: str = sub_type
         self.sub_type_value: int = int(sub_type_value)
+        if sub_type_value2 != None and sub_type_value3 != None:
+            self.sub_type_value2: int = int(sub_type_value2)
+            self.sub_type_value3: int = int(sub_type_value3)
+
 
     @staticmethod
     def from_dict(source: Dict):

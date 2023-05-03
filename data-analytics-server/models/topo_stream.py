@@ -17,7 +17,7 @@ class TopologyStream(object):
 
     def append_stream(self, documents: List[Dict]):
         """Adds  new packets to a raw stream and checks if enough are in the stream to flag update"""
-        self.stream = documents
+        self.stream = self.stream + documents
         # if the stream has accumulated enough packets, flag update is ready
         if len(self.stream) > self.packet_update_limit:
             self.is_update_ready = True
@@ -39,7 +39,7 @@ class TopologyStream(object):
     def _move_packets_to_df_packet_hist(self) -> None:
         """Move the raw packet stream (list) to dataframe history"""
         self.df_packet_hist = pd.concat(
-            [pd.DataFrame(self.stream),]
+            [pd.DataFrame(self.stream),self.df_packet_hist]
         )
         self.df_packet_hist = self.df_packet_hist.sort_values(
             "node", ascending=True

@@ -34,24 +34,40 @@ class BaseLog(object):
     def extract_log_fields(self) -> str:
         """ Parse all the log into appropriate fields 
         Format: [subtype(i.e directions),'','',logvalue,logtype]
-        """
-        try:
-            log_fields =  list(re.search(r'(INFO|Recv|Send|icmp|drop|parent|duty)([a-zA-Z]*\W{0,1}\s*)?(.*Node ID: )?(\d+)?',self.log).groups())
-        except:
-            #Non-supported log detected
-            return []
-        if log_fields[0].lower() == 'info':
-            if log_fields[3] != None: 
-                log_fields.append('topology')
-            else:
-                #Unsupported INFO message
-                return []
-        elif log_fields[0].lower() in ('recv','send'):
-            log_fields.append('packet')
-        else:
-            log_fields.append('meta')
+        """                   
+                    
+        pattern_list = ['(add_uplink|add_downlink).*(from)+.*(\s+\d+)',                    
+                        '(SendData|RecvData|duty|icmp|parent|drop)([a-zA-Z]*\W{0,1}\s*)?(\d+)(\s+\d+)?(\s+\d+)?']
+        log_fields = []
+        returned_field = [] #[subtype(i.e directions),'','',logvalue,logtype]
+        for pattern in pattern_list:
+            try:
+                log_fields = list(re.search(pattern, self.log).groups())
+                break 
+            except:
+                continue
+        
+        if len(log_fields) == 5:  
+    
+            returned_field = [log_fields[0],log_fields[2], None, None, 'meta']
+            if log_fields[3] != None and log_fields[4] != None:
+                returned_field[2] = int(log_fields[3])
+                returned_field[3] = int(log_fields[4])
 
-        return log_fields
+            if returned_field[0].lower() in ('senddata','recvdata'):
+                returned_field[0] = log_fields[0][:4]
+                returned_field[4] = 'packet'                      
+
+                
+        elif len(log_fields) == 3:
+            returned_field = [log_fields[0],int(log_fields[2]), self.node, log_fields[1], 'topology']
+            if ("add_uplink" in log_fields[0] and "from" in log_fields[1]):
+                returned_field[1] = self.node
+                returned_field[2] = int(log_fields[2]) #swap position
+         
+        return returned_field
+
+        
     
 
     def __repr__(self) -> str:

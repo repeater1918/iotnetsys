@@ -46,3 +46,4 @@ class MetaStream(object):
     def _prepare_data_types(self) -> None:
         """Converts to correct datatypes"""
         self.df_packet_hist["timestamp"] = self.df_packet_hist["timestamp"].astype(int)
+        self.df_packet_hist = self.df_packet_hist.fillna(value={'sub_type_value2': 0, 'sub_type_value3': 0})

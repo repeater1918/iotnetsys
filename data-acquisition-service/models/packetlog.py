@@ -10,7 +10,7 @@ class PacketLog(BaseLog):
         self.sessionid = sessionid
         self.type = log_fields[4]
         self.direction: str = log_fields[0].lower()
-        self.packet_id: str = log_fields[3]
+        self.packet_id: str = log_fields[1]
 
 
     @staticmethod

@@ -81,6 +81,6 @@ class Database:
 
     def find_session_id(self, collection_name: str):
         collection = self.get_collection(collection_name)
-        sessionid = collection.distinct('sessionid')[-1]  #Get last session id       
+        sessionid = collection.distinct('sessionid')       
         
         return sessionid

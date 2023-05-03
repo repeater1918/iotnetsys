@@ -126,12 +126,13 @@ def node_nav_callback(in_nav, n_clicks):
     print(n_clicks)
     servers = get_topo_data(query="node_parent")
     nav = []
-    if len(servers) > 0:
-        for v in servers:
-            nav.append(dbc.ListGroupItem(f"Edge Server (Node {v})", className="typology-lvl1", href="/"))
+    servers_str = ','.join(map(str,servers))
+    nav.append(dbc.ListGroupItem(f"Edge Server (Node: {servers_str})", className="typology-lvl1", href="/"))
 
     sensors = get_topo_data(query="node_sensor")
+    #
     for i in sensors:
-            nav.append(dbc.ListGroupItem(f"IoT Node {i}", className="typology-lvl2", href=f"/node_view/{i}"))   
+            nodeid = i['node']
+            nav.append(dbc.ListGroupItem(f"IoT Node {nodeid}", className=f"typology-lvl2", href=f"/node_view/{nodeid}"))   
 
     return nav

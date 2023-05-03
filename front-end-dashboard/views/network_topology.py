@@ -10,7 +10,10 @@ default_stylesheet = [
         'style': {
             'background-color': '#BFD7B5',
             'label': 'data(label)',
-            'color': "white"
+            'color': "white",
+            'font-size': '1.5em',
+            'width': "50%",
+            'height': "50%",
         }
         
     },
@@ -102,10 +105,10 @@ def displayTapNodeData(data, is_open):
             is_open = True
             
             if str(selected_node) not in roots:
-                toast_child = [html.P("My information is ... ", className="mb-0"),]
+                toast_child = [html.P("I'm a sensor ", className="mb-0"),]
                 toast_child.append(dbc.Button("Go to node view", size="sm mt-2", href=f"/node_view/{selected_node}"))
             else:
-                 toast_child = [html.P("I'm edge server", className="mb-0"),]
+                 toast_child = [html.P("I'm a server", className="mb-0"),]
 
             
         else: 

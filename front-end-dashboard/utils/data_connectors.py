@@ -43,6 +43,14 @@ def get_topo_data(query = None):
         res = []
     return res 
 
+def get_session_data():
+    res = requests.get(AAS_URI+f"sessiondata")
+    if res.status_code == 200:
+        res = res.json()
+        
+    else:
+        res = []
+
 def send_timeframe(milliseconds: int):
     result_dict = {'timeframe': milliseconds}
     res = requests.post(AAS_URI+f"timeframe", json=result_dict) 

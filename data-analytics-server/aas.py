@@ -403,15 +403,14 @@ def watch_topology() -> None:
 
         #print("Topology data update in progress")
         global sessionid
-        sessionid = client.find_session_id(collection_name="topology")
-         
+        sessionid = client.find_session_id(collection_name="topology")[-1]         
         
         data, id_max = client.find_by_pagination(
-            collection_name="topology", last_id = None, page_size=10, sessionid=sessionid
+            collection_name="topology", last_id = last_topo_id, page_size=10, sessionid=sessionid
         )
 
         if data is None:
-            # print("WatchMetaLogs: no new topo logs in DB, putting watcher to sleep")
+            # print("WatchMetaLogs: no new topo logs in DB, putting watcher to sleep")'
             is_updating_topo.clear()
             time.sleep(30)
             continue
@@ -502,13 +501,20 @@ async def read_topo_db(q: Union[str, None] = None):
     
     if q in supported_query:
         if q == 'node_sensor':
-            res = [x['node'] for x in topo_df if x['role'] == 'sensor']          
+            res = [{"node": x['node'], "hop_count":x['hop_count']} for x in topo_df if x['role'] == 'sensor']          
         if q == 'node_parent':
             res = [x['node'] for x in topo_df if x['role'] == 'server']
     else:
         res = topo_df
     if len(topo_df) == 0:
         print("No topology data")
+    return res
+
+
+@app.get("/api/sessiondata")
+async def read_session_data():
+    res = client.find_session_id(collection_name='topology')
+    res = {"Session Time": res}
     return res
 
 

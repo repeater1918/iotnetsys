@@ -11,6 +11,7 @@ import dash
 from dash import Output, Input, MATCH
 
 
+
 def get_common_graph(api_data, nodeid=None):    
     """Generate the graphs use in both network & node pages: pdr, icmp, queueloss, e2e, deadloss, duty-cycle"""
 
@@ -90,26 +91,26 @@ def get_common_graph(api_data, nodeid=None):
     return (queueloss_graph, e2e_graph, deadloss_graph, graph_duty_cycle, pdr_graph, icmp_graph,)
 
 #Callbacks for above graph
-@dash.callback(
-Output({"type": "graph-queueloss", "page": MATCH}, "figure"),
-Output({"type": "graph-e2e", "page": MATCH}, "figure"),
-Output({"type":"graph-deadloss", "page": MATCH}, "figure"),
-Output({"type":"graph-duty-cycle", "page": MATCH}, "figure"),
-Output({"type":"graph-pdr", "page": MATCH}, "figure"),
-Output({"type":"graph-icmp", "page": MATCH}, "figure"),
-[Input('url', 'pathname'), Input('refresh-dash', 'n_clicks')])
-def update_common_graphs(pathname, n_clicks):
+# @dash.callback(
+# Output({"type": "graph-queueloss", "page": MATCH}, "figure"),
+# Output({"type": "graph-e2e", "page": "network"}, "figure"),
+# Output({"type":"graph-deadloss", "page": MATCH}, "figure"),
+# Output({"type":"graph-duty-cycle", "page": MATCH}, "figure"),
+# Output({"type":"graph-pdr", "page": MATCH}, "figure"),
+# Output({"type":"graph-icmp", "page": MATCH}, "figure"),
+# [Input('url', 'pathname'), Input('refresh-dash', 'n_clicks')])
+# def update_common_graphs(pathname, n_clicks):
+#     print("update ...")
+#     if pathname.split('/')[1] == 'node_view':
+#         nodeid = int(pathname.split('/')[-1])
+#         api_data  = get_node_data(nodeid)
+#     elif pathname == '/':
+#         nodeid = None
+#         api_data  = get_network_data()
+#     else:
+#         return dash.no_update
     
-    if pathname.split('/')[1] == 'node_view':
-        nodeid = int(pathname.split('/')[-1])
-        api_data  = get_node_data(nodeid)
-    elif pathname == '/':
-        nodeid = None
-        api_data  = get_network_data()
-    else:
-        return dash.no_update
-    
-    queueloss_graph, e2e_graph, deadloss_graph, graph_duty_cycle, pdr_graph, icmp_graph = get_common_graph(api_data, nodeid)
+#     queueloss_graph, e2e_graph, deadloss_graph, graph_duty_cycle, pdr_graph, icmp_graph = get_common_graph(api_data, nodeid)
 
-    return (queueloss_graph, e2e_graph, deadloss_graph, graph_duty_cycle, pdr_graph, icmp_graph)
+#     return (queueloss_graph, e2e_graph, deadloss_graph, graph_duty_cycle, pdr_graph, icmp_graph)
 

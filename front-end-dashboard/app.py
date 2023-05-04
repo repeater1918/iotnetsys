@@ -51,6 +51,7 @@ app.layout = html.Div(
             id="interval-component",
             interval= UPDATE_INTERVAL,  
         ),
+        html.Div(id='usr-tz', style={"display":"none"}),
         html.Div(
             className="wrapper",
             
@@ -101,13 +102,22 @@ def set_timeframe(value):
     Input("dropdown-dlloss", "value")
 )
 def set_timeframe(value):
-    print(value)
+    print(f"Timeframe set {value}")
     if value == None:
         send_dlloss(25) #default 25ms
     else:
         send_dlloss(value)
 
-
-
+#Client callback to get tz
+app.clientside_callback(
+     """
+    function(id) {          
+        const offset = new Date().getTimezoneOffset();                 
+        return offset
+    }
+    """,
+    Output('usr-tz', 'children'),
+    Input('usr-tz', 'id'),
+)
 if __name__ == "__main__":
     app.run(debug=True)

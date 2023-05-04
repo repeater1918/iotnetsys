@@ -8,7 +8,7 @@ def get_pdr_graph(data = None, is_init=False, node_id=False, is_empty=False):
 
     if is_init:
         # first initialization of the graph, just need empty placeholder and identify the object in html tree
-        graph_id = "graph-pdr-node" if node_id else "graph-pdr"
+        graph_id = {"type": "graph-pdr", "page": "node" if node_id else "network"} 
         title = f"Packets Delivery Ratio - Node: {node_id}" if node_id else "Packets Delivery Ratio"
         pdr_graph = _get_place_holder()
 

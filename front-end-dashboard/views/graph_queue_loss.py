@@ -9,7 +9,7 @@ def get_queueloss_graph(data = None, is_init=False, node_id=False, is_empty=Fals
 
     if is_init:
         # first initialization of the graph, just need empty placeholder and identify the object in html tree
-        graph_id = "graph-queueloss-node" if node_id else "graph-queueloss"
+        graph_id = {"type": "graph-queueloss", "page": "node" if node_id else "network"} 
         #graph_id = "graph-queueloss"
         title = f"Queue Loss - Node: {node_id}" if node_id else "Queue Loss"
         #title = "Queue Loss"

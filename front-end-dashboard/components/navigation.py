@@ -1,7 +1,8 @@
 import dash_bootstrap_components as dbc
-from dash import html, Output, Input
+from dash import html, Output, Input, MATCH
 import dash
-from utils.data_connectors import get_topo_data
+from utils.data_connectors import get_topo_data, get_session_data
+from datetime import datetime, timedelta
 
 navbar = dbc.Navbar(
     children=[
@@ -25,6 +26,7 @@ navbar = dbc.Navbar(
                             'Refresh']),
                             width="auto"
                         ),
+                        
                         dbc.Col(
                             dbc.DropdownMenu(
                                 children=[
@@ -116,14 +118,12 @@ def top_page_heading(head_msg="Network Level"):
             dbc.Row(dbc.Col(html.Div(children=dash.page_container)))                                        
             )
 
-
 @dash.callback(
         Output('node_nav', 'children'),
         [Input('node_nav','children'),
          Input('refresh-dash', 'n_clicks'),]
         )
 def node_nav_callback(in_nav, n_clicks):        
-    print(n_clicks)
     servers = get_topo_data(query="node_parent")
     nav = []
     servers_str = ','.join(map(str,servers))
@@ -136,3 +136,25 @@ def node_nav_callback(in_nav, n_clicks):
             nav.append(dbc.ListGroupItem(f"IoT Node {nodeid}", className=f"typology-lvl2", href=f"/node_view/{nodeid}"))   
 
     return nav
+
+
+@dash.callback(   
+    Output({'type':'loading-output', 'page': MATCH}, "children"),
+    [Input('refresh-dash', 'n_clicks'),
+     Input("usr-tz", "children")])
+def update_refresh_loading_output_node(n_clicks, usrtz):
+    #print(n_clicks)
+    #print("usr timezone", usrtz)
+    data_update = datetime.utcnow() - timedelta(minutes=usrtz)
+    data_update = data_update.strftime("%Y-%m-%d %H:%M:%S")
+    
+    sessions = get_session_data()
+    last_session = sessions['Session Time'][-1]
+    dt = datetime.fromisoformat(last_session)
+    local_dt = (dt - timedelta(minutes=usrtz)).strftime("%Y-%m-%d %H:%M:%S")
+
+    loading_out = [html.Div(f"Experiement Time: {local_dt}"), html.Div(f"Dashboard Last Updated: {data_update}"), ]
+    return loading_out
+
+
+

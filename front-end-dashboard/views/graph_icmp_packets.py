@@ -5,7 +5,7 @@ def get_icmp_graph(data = None, is_init=False, node_id=False, is_empty=False):
 
     if is_init:
         # first initialization of the graph, just need empty placeholder and identify the object in html tree
-        graph_id = "graph-icmp-node" if node_id else "graph-icmp"
+        graph_id = {"type": "graph-icmp", "page": "node" if node_id else "network"} 
         title = f"ICMP Packets - Node: {node_id}" if node_id else "ICMP Packets"
         icmp_graph = _get_place_holder()
 

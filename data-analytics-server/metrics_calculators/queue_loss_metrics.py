@@ -21,13 +21,13 @@ def calc_queue_loss_nodes(df: pd.DataFrame) -> pd.DataFrame:
     
     
 
-def get_packets_in_timeframe(df: pd.DataFrame, timeframe: int) -> pd.DataFrame:
-    # get packets only within timeframe (miliseconds)
-    start_timestamp_limit = df['timestamp'].min()
-    if timeframe == 0:
-        end_timestamp_limit = df['timestamp'].max()
-    else:
-        end_timestamp_limit = start_timestamp_limit + timeframe
-     # filter down to relevant timeframe
-    df = df.loc[df['timestamp'] < end_timestamp_limit ].copy()
-    return df
+# def get_packets_in_timeframe(df: pd.DataFrame, timeframe: int) -> pd.DataFrame:
+#     # get packets only within timeframe (miliseconds)
+#     start_timestamp_limit = df['timestamp'].min()
+#     if timeframe == 0:
+#         end_timestamp_limit = df['timestamp'].max()
+#     else:
+#         end_timestamp_limit = start_timestamp_limit + timeframe
+#      # filter down to relevant timeframe
+#     df = df.loc[df['timestamp'] < end_timestamp_limit ].copy()
+#     return df

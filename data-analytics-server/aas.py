@@ -170,12 +170,12 @@ def packet_metric_scheduler():
 
         try:
             #calculate number of received packets
-            received_metrics, received_metrics_node = calculate_received_metrics(copy.deepcopy(df_all_packets), timeframe=timeframe_param*1000, bins=10)        
+            received_metrics = calculate_received_metrics(copy.deepcopy(df_all_packets), timeframe=timeframe_param*1000, bins=10)        
             #for network
             network_df['received_metric'] = received_metrics 
             #for nodes
-            for node, data in received_metrics_node.items():
-                node_df[node]['received_metric'] = data
+            #for node, data in received_metrics_node.items():
+            #     node_df[node]['received_metric'] = data
         except Exception as ex:
             print(f'Error in RECV PACKETS METRIC calc: {ex}')    
       

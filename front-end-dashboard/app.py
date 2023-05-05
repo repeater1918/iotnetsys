@@ -14,17 +14,17 @@ import flask
 from utils.data_connectors import send_timeframe, send_dlloss, get_network_data, get_node_data
 from utils.graph_utils import get_common_graph
 from dash import MATCH
-
+from maindash import app 
 print(f"Running in mode -> {os.environ.get('DEPLOYMENT', 'dev')}")
 
-server = flask.Flask(__name__)
-app = dash.Dash(
-    __name__,
-    use_pages=True,
-    server=server,
-    external_stylesheets=[dbc.themes.DARKLY, dbc.icons.BOOTSTRAP],
-    suppress_callback_exceptions=True,
-)
+# server = flask.Flask(__name__)
+# app = dash.Dash(
+#     __name__,
+#     use_pages=True,
+#     server=server,
+#     external_stylesheets=[dbc.themes.DARKLY, dbc.icons.BOOTSTRAP],
+#     suppress_callback_exceptions=True,
+# )
 
 UPDATE_INTERVAL = 5 * 1000 # check for a data update every 5 seconds
 
@@ -122,28 +122,6 @@ app.clientside_callback(
     Input('usr-tz', 'id'),
 )
 
-@app.callback(
-Output({"type": "graph-queueloss", "page": MATCH}, "figure"),
-Output({"type": "graph-e2e", "page": MATCH}, "figure"),
-Output({"type":"graph-deadloss", "page": MATCH}, "figure"),
-Output({"type":"graph-duty-cycle", "page": MATCH}, "figure"),
-Output({"type":"graph-pdr", "page": MATCH}, "figure"),
-Output({"type":"graph-icmp", "page": MATCH}, "figure"),
-[Input('url', 'pathname'), Input('refresh-dash', 'n_clicks')])
-def update_common_graphs(pathname, n_clicks):
-    print("update ...")
-    if pathname.split('/')[1] == 'node_view':
-        nodeid = int(pathname.split('/')[-1])
-        api_data  = get_node_data(nodeid)
-    elif pathname == '/':
-        nodeid = None
-        api_data  = get_network_data()
-    else:
-        return dash.no_update
-    
-    queueloss_graph, e2e_graph, deadloss_graph, graph_duty_cycle, pdr_graph, icmp_graph = get_common_graph(api_data, nodeid)
-
-    return (queueloss_graph, e2e_graph, deadloss_graph, graph_duty_cycle, pdr_graph, icmp_graph)
 
 if __name__ == "__main__":
     app.run(debug=True)

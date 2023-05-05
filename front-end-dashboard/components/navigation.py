@@ -3,6 +3,7 @@ from dash import html, Output, Input, MATCH
 import dash
 from utils.data_connectors import get_topo_data, get_session_data
 from datetime import datetime, timedelta
+from maindash import app
 
 navbar = dbc.Navbar(
     children=[
@@ -118,7 +119,7 @@ def top_page_heading(head_msg="Network Level"):
             dbc.Row(dbc.Col(html.Div(children=dash.page_container)))                                        
             )
 
-@dash.callback(
+@app.callback(
         Output('node_nav', 'children'),
         [Input('node_nav','children'),
          Input('refresh-dash', 'n_clicks'),]
@@ -138,7 +139,7 @@ def node_nav_callback(in_nav, n_clicks):
     return nav
 
 
-@dash.callback(   
+@app.callback(   
     Output({'type':'loading-output', 'page': MATCH}, "children"),
     [Input('refresh-dash', 'n_clicks'),
      Input("usr-tz", "children")])

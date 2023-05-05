@@ -6,7 +6,7 @@ def get_hop_cnt_graph(data = None, is_init=False, node_id=False, is_empty=False)
 
     if is_init:
         # first initialization of the graph, just need empty placeholder and identify the object in html tree
-        graph_id = "graph-hopcount-node" if node_id else "graph-hopcount"
+        graph_id = {"type": "graph-hopcount", "page": "node" if node_id else "network"} 
         title = f"Hop count value - Node: {node_id}" if node_id else "Avg Network Hop Count"
         hop_cnt_graph = _get_place_holder()
 

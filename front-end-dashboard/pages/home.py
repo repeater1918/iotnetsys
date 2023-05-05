@@ -48,20 +48,3 @@ layout = html.Div(
 )
 
 # Callback 
-@dash.callback(Output("graph-receivedpackets", "figure"),
-[Input('url', 'pathname'), Input('refresh-dash', 'n_clicks')])
-def update_network_graph(pathname, n_clicks):
-
-    if pathname != '/':
-        return dash.no_update
-
-    api_data  = get_network_data()
-   
-    #graph for received packets
-    df_received = pd.DataFrame(api_data['received_metric'])
-    if len(api_data['received_metric']) == 0:
-        received_graph = get_receivedpackets_graph(is_empty=True)
-    else:
-        received_graph = get_receivedpackets_graph(df_received)
-
-    return received_graph

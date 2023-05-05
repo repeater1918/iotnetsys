@@ -9,7 +9,7 @@ def get_receivedpackets_graph(data = None, is_init=False, node_id=False, is_empt
 
     if is_init:
         # first initialization of the graph, just need empty placeholder and identify the object in html tree
-        graph_id = "graph-receivedpackets-node" if node_id else "graph-receivedpackets"
+        graph_id = {"type": "graph-receivedpackets", "page": "node" if node_id else "network"} 
         #graph_id = "graph-queueloss"
         title = f"Number of received packets - Node: {node_id}" if node_id else "Number of received packets"
         #title = "Queue Loss"

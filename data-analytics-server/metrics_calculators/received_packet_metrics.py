@@ -5,7 +5,7 @@ from typing import Tuple
 from datetime import datetime, timedelta
 import time
 
-def calculate_received_metrics(df: pd.DataFrame, timeframe: int, bins: int) -> Tuple[dict, dict]:
+def calculate_received_metrics(df: pd.DataFrame, timeframe: int, bins: int) -> pd.DataFrame:
     df = get_packets_in_timeframe(df, timeframe)
     # calculate bin size
     bin_size = (df['timestamp'].max() - df['timestamp'].min()) / bins
@@ -15,9 +15,11 @@ def calculate_received_metrics(df: pd.DataFrame, timeframe: int, bins: int) -> T
     env_time_min = df['env_timestamp'].min()
     # limit to recv messages
     df = df.loc[df['direction'] == 'recv'].copy()
+    
     metrics_net = calculate_metrics(df, env_time_min, bin_size)
-    metrics_node = calculate_metrics_node(df, env_time_min, bin_size)
-    return metrics_net, metrics_node
+    #metrics_node = calculate_metrics_node(df, env_time_min, bin_size)
+    
+    return metrics_net
 
 def get_packets_in_timeframe(df: pd.DataFrame, timeframe: int) -> pd.DataFrame:
     # get packets only within timeframe (miliseconds)
@@ -26,6 +28,8 @@ def get_packets_in_timeframe(df: pd.DataFrame, timeframe: int) -> pd.DataFrame:
         end_timestamp_limit = df['timestamp'].max()
     else:
         end_timestamp_limit = start_timestamp_limit + timeframe
+        if (end_timestamp_limit >= df['timestamp'].max()):
+            end_timestamp_limit = df['timestamp'].max()
      # filter down to relevant timeframe
     df = df.loc[df['timestamp'] < end_timestamp_limit ].copy()
     return df
@@ -59,25 +63,22 @@ def calculate_metrics(df: pd.DataFrame, env_time_min, bin_size: int) -> pd.DataF
     df['bins'] = df.reset_index()['bins'].apply(bin_label)
     return df.to_dict('records')
 
-def calculate_metrics_node(df: pd.DataFrame, env_time_min, bin_size: int) -> pd.DataFrame:
-    df = df.groupby(['node','bins']).agg({'packet_id': 'count', 'env_timestamp': max}).rename(columns={'packet_id': 'total_packets'})
-    df = df.reset_index()
+# def calculate_metrics_node(df: pd.DataFrame, env_time_min, bin_size: int) -> pd.DataFrame:
+#     df = df.groupby(['node','bins']).agg({'packet_id': 'count', 'env_timestamp': max}).rename(columns={'packet_id': 'total_packets'})
+#     df = df.reset_index()
     
-    df = add_env_timestamps(df, env_time_min, bin_size)
+#     df = add_env_timestamps(df, env_time_min, bin_size)
     
-    for node in df['node'].unique():
-        packets = df.loc[df['node'] == node, 'total_packets']
-        for i in range(1, len(packets)): 
-            packets[i] += packets[i-1]
-        df.loc[df['node'] == node, 'total_packets'] = packets
+#     for node in df['node'].unique():
+#         packets = df.loc[df['node'] == node, 'total_packets']
+#         for i in range(1, len(packets)): 
+#             packets[i] += packets[i-1]
+#         df.loc[df['node'] == node, 'total_packets'] = packets
+#     breakpoint()
+#     df['bins'] = df.reset_index()['bins'].apply(bin_label)
     
-    df['bins'] = df.reset_index()['bins'].apply(bin_label)
-    
-    result = {}
-    for node in df['node'].unique():
-        result[node] = df.loc[df['node'] == node].to_dict('records')
-    #breakpoint()
-    return result
-
-
-    
+#     result = {}
+#     for node in df['node'].unique():
+#         result[node] = df.loc[df['node'] == node].to_dict('records')
+#     #breakpoint()
+#     return result

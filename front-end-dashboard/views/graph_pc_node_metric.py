@@ -9,7 +9,7 @@ def get_parentchange_graph(data=None, is_init=False, node_id=False, is_empty=Fal
 
     if is_init:
         # first initialization of the graph, just need empty placeholder and identify the object in html tree
-        graph_id = "graph-pc-node" if node_id else "graph-pc"
+        graph_id = {"type": "graph-pc", "page": "node" if node_id else "network"} 
         #graph_id = "graph-pc-node"
         title = f"Number of parent changes - Node: {node_id}" if node_id else "Number of parent changes"
         #title = "Parent Changes per Node"

@@ -7,6 +7,7 @@ from views.graph_pdr import get_pdr_graph
 from views.graph_queue_loss import get_queueloss_graph
 from views.graph_received_packets import get_receivedpackets_graph
 from views.graph_hop_count import get_hop_cnt_graph
+from views.graph_pc_node_metric import get_parent_chg_graph
 from views.network_topology import default_stylesheet
 import pandas as pd
 import dash
@@ -18,7 +19,7 @@ from maindash import app
 
 def get_common_graph(api_data, nodeid=None):    
     """Generate the graphs use in both network & node pages: pdr, icmp, queueloss, e2e, deadloss, duty-cycle"""
-
+    
     df_pdr = pd.DataFrame(api_data['pdr_metric'])
     if len(api_data['pdr_metric']) == 0:
       pdr_graph = get_pdr_graph(is_empty=True, node_id=nodeid)
@@ -130,10 +131,11 @@ def update_network_graph(pathname, n_clicks):
     if pathname != '/':
         return dash.no_update
     
-    api_data  = get_network_data()
-   
-    #graph for received packets
-    df_received = pd.DataFrame(api_data['received_metric'])
+    api_data  = get_network_data("received_metric")
+
+    #graph for received packets    
+    df_received = pd.DataFrame(api_data['received_metric'])   
+            
     if len(api_data['received_metric']) == 0:
         received_graph = get_receivedpackets_graph(is_empty=True)
     else:
@@ -152,28 +154,23 @@ def update_node_graph(pathname, n_clicks):
 
     nodeid = int(pathname.split('/')[-1])
 
-    api_data  = get_node_data(nodeid)    
+    api_data  = get_node_data(nodeid, 'pc_metric')    
 
     topo_api_data = get_topo_data()
+
     df_topo = pd.DataFrame(topo_api_data)
+
     if len(topo_api_data) == 0:
-        hopcount_graph = get_hop_cnt_graph(is_empty=True, node_id=nodeid)[0]
+        hopcount_graph = get_hop_cnt_graph(is_empty=True, node_id=nodeid)
     else:
         hopcount_graph = get_hop_cnt_graph(df_topo, node_id = nodeid)[0]
+    
+    df_pc_node = pd.DataFrame(api_data['pc_metric'])
 
-    df_pc_node = pd.DataFrame(api_data['pc_metric_node'])
-    if len(api_data['pc_metric_node']) == 0:
-        pc_node_graph = px.bar(title=f"Parent Changes - Node {nodeid}")
+    if len(api_data['pc_metric'])  == 0:
+        pc_node_graph = get_parent_chg_graph(is_empty=True, node_id=nodeid)
     else:
-        pc_node_graph = px.bar(
-            df_pc_node,
-            x="node",
-            y="total_parent_changes",
-            title=f"Parent Changes - Node {nodeid}",
-            labels={"node": "Node ID", "total_parent_changes": "Total Parent Changes"},
-        )
-        pc_node_graph.update_traces(marker_color="red")
-        pc_node_graph.update_xaxes(type="category")
+        pc_node_graph = get_parent_chg_graph(df_pc_node, node_id = nodeid)[0]
 
     return (hopcount_graph, pc_node_graph)
 

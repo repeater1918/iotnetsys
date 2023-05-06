@@ -75,16 +75,18 @@ def update_topology_dict(log, log_type):
     collection = client.get_collection('topology')
     nodeid = int(log.node)
     res = 'No update'
-    
+    db_insert = True
     if log_type == 'packet':
         if nodeid not in node_dict.keys():
             #Node doesnt exist in db 
             topo = TopologyLog(nodeid, "Generated from Packet event", log.timestamp,log.sessionid, log.env_timestamp,log.log_fields)
             topo.role = 'server' if log.direction == 'recv' else 'sensor'
             topo.parent = nodeid                       
-            node_dict[nodeid] = topo   
+            node_dict[nodeid] = topo  
+            db_insert = True
             #print("Insert to database object created automatically")            
         else:
+            db_insert = False
             if (log.direction == 'recv'): 
                 if (node_dict[nodeid].role == 'sensor'):
                     #Promote the sensor to be server                    
@@ -99,18 +101,20 @@ def update_topology_dict(log, log_type):
                         if node_dict[nodeid].parent == nodeid: #parent value and nodeid are same (not init yet)
                             node_dict[nodeid].parent = int(log.node)
                             node_dict[nodeid]._last_updated = time.time()
-                            #print("updated parent for sensor from pkt ev")   
+                            #print("updated parent for sensor from pkt ev")  
 
     if log_type == 'topology':
         #Handle current node
         if nodeid not in node_dict.keys():
             #Node doesnt exist, insert it
             node_dict[nodeid] = log
+            db_insert = True
             #print(f"Insert a record from topology event to database")           
         else:
-            #Node is known, hence just updated based on the log 
+            #Node is known, hence just updated based on the log             
             node_dict[nodeid] = log
             node_dict[nodeid]._last_updated = time.time()   
+            db_insert = False
             #print(f"Update database with a topology info {log.log}")       
 
         #Handle the parent from the message, since the topology is 2-way, the child inform the parent (or parent inform the child)               
@@ -129,7 +133,7 @@ def update_topology_dict(log, log_type):
             #print(f"Topology Database is updated with record {db_entry}")
             res = collection.find_one_and_update({"node": nodeid}, {"$set": db_entry}, 
                                                 sort=[('_id', -1)], return_document=True)
-    else:
+    elif db_insert == True:
         res = collection.insert_one(topo.to_database()).inserted_id
 
     return res

@@ -4,13 +4,16 @@ import os
 AAS_URI = os.environ.get('AAS_URI', "http://127.0.0.1:8000/api/") #AAS supports networklv_data or nodelv_data
 print(f"AAS_URI -> {AAS_URI}")
 
-global supported_metrics
+global supported_metrics, node_supported_metrics
 supported_metrics = ["pdr_metric","icmp_metric","received_metric", "e2e_metric", "deadloss_metric", "queueloss_metric","energy_cons_metric"]
-node_supported_metrics = [*supported_metrics, "pc_metric_node"]
+node_supported_metrics = [*supported_metrics, "pc_metric"]
 
-def get_network_data():
+def get_network_data(metric = None):
     result_dict = {}
+    
     for v in supported_metrics:
+        if metric != None and v != metric: 
+            continue
         res = requests.get(AAS_URI+f"networkmetric/{v}")
         if res.status_code == 200:
             res = res.json()
@@ -22,9 +25,13 @@ def get_network_data():
     return result_dict
 
 
-def get_node_data(nodeid):
-    result_dict = {}
+def get_node_data(nodeid, metric=None):
+    result_dict = {}    
+    
+    #loop through all metric
     for v in node_supported_metrics:
+        if metric != None and v != metric: 
+            continue          
         res = requests.get(AAS_URI+f"nodemetric/{v}?node={nodeid}") 
         if res.status_code == 200:
             res = res.json()

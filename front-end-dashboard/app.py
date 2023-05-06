@@ -17,15 +17,6 @@ from dash import MATCH
 from maindash import app 
 print(f"Running in mode -> {os.environ.get('DEPLOYMENT', 'dev')}")
 
-# server = flask.Flask(__name__)
-# app = dash.Dash(
-#     __name__,
-#     use_pages=True,
-#     server=server,
-#     external_stylesheets=[dbc.themes.DARKLY, dbc.icons.BOOTSTRAP],
-#     suppress_callback_exceptions=True,
-# )
-
 UPDATE_INTERVAL = 5 * 1000 # check for a data update every 5 seconds
 
 import json
@@ -35,10 +26,6 @@ from dash import Input, Output, State, dcc, html, ctx
 from dash_bootstrap_components._components.Container import Container
 from flask import request
 from components.navigation import navbar, nav_drawer, top_page_heading
-
-# declare global variables that will be updated by AAS
-global df_pdr, df_icmp
-df_pdr = df_icmp = None
 
 dbt.load_figure_template("darkly")
 

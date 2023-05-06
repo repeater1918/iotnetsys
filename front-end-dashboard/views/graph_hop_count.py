@@ -25,12 +25,10 @@ def get_hop_cnt_graph(data = None, is_init=False, node_id=False, is_empty=False)
     avg_hop_cnt = round(data.loc[data['node'] != server_node, 'hop_count'].mean(),2)
 
     if node_id:
-        #  data is available and a node type graph is required, render graph for a node view
-        #breakpoint()
-        
+        #  data is available and a node type graph is required, render graph for a node view       
         hop_cnt_graph = go.Figure(
                         go.Indicator(
-                            mode="number+delta",
+                            mode="number",
                             value=data.loc[data['node'] == node_id, 'hop_count'].values[0],
                             number={"font":{"size":100}},
                             domain={"row":0, "column": 1},                          
@@ -47,10 +45,9 @@ def get_hop_cnt_graph(data = None, is_init=False, node_id=False, is_empty=False)
     #  data is available and a node type graph is required, render graph for a node view
     hop_cnt_graph =  go.Figure(
                         go.Indicator(
-                            mode="number+delta",
+                            mode="number",
                             value=0,
                             domain={"x": [0, 1], "y": [0, 1]},
-                            delta={"reference": avg_hop_cnt, "increasing": {"color": "#FF4136"},"decreasing": {"color": "#FF4136"}},
                             title={"text": "Hop Count Level"},
                            
                         ),

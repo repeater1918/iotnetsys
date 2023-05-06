@@ -1,24 +1,19 @@
 import plotly.express as px
 from dash import dcc, html
-from pandas import DataFrame
-import dash_bootstrap_templates as dbt
+import plotly.graph_objects as go
 
-dbt.load_figure_template("DARKLY")
-
-def get_parentchange_graph(data=None, is_init=False, node_id=False, is_empty=False):
+def get_parent_chg_graph(data = None, is_init=False, node_id=False, is_empty=False):
 
     if is_init:
         # first initialization of the graph, just need empty placeholder and identify the object in html tree
         graph_id = {"type": "graph-pc", "page": "node" if node_id else "network"} 
-        #graph_id = "graph-pc-node"
-        title = f"Number of parent changes - Node: {node_id}" if node_id else "Number of parent changes"
-        #title = "Parent Changes per Node"
-        receivedpackets_graph = _get_place_holder()
+        title = f"Parent change value - Node: {node_id}" if node_id else "Avg Parent Change in Network"
+        parent_chg_graph = _get_place_holder()
 
         return html.Div(
             children=[
                 html.Div(title, className="graph-title"),
-                dcc.Graph(id=graph_id, figure=receivedpackets_graph),
+                dcc.Graph(id=graph_id, figure=parent_chg_graph),
             ]
         )
     
@@ -26,22 +21,43 @@ def get_parentchange_graph(data=None, is_init=False, node_id=False, is_empty=Fal
         #  update has occurred but not data, return a empty placeholder
         return _get_place_holder()
     
-    parentchange_graph = px.bar(
-            data,
-            x="node",
-            y="parent_changes",
-            labels={"node": "Node ID", "parent_changes": "Number of parent changes"},
-        )
-    
-    parentchange_graph = _style_graph(parentchange_graph, data)
-    return parentchange_graph
+  
+    if node_id:
+        #  data is available and a node type graph is required, render graph for a node view       
+        parent_chg_graph = go.Figure(
+                        go.Indicator(
+                            mode="number",
+                            value=data['sub_type_value'].values[0],
+                            number={"font":{"size":100}},
+                            domain={"row":0, "column": 1},                          
+                            title = {"text": f"<span style='font-size:0.9em;color:gray'> Average is {data['average'].values[0]} </span><br>"}
+                            
+                        ),                       
+                        layout={"plot_bgcolor": "#222", "paper_bgcolor": "#222",},
+                    ),
+        
+
+        return parent_chg_graph
+
+
+    #  data is available and a node type graph is required, render graph for a node view
+    parent_chg_graph =  go.Figure(
+                        go.Indicator(
+                            mode="number",
+                            value=0,
+                            domain={"x": [0, 1], "y": [0, 1]},                            
+                            title={"text": "Parent Change Value"},
+                           
+                        ),
+                        layout={"plot_bgcolor": "#222", "paper_bgcolor": "#222"},
+                    ),
+
+    return parent_chg_graph
+
 
 def _get_place_holder():
-    fig = _style_graph(px.bar())
+    fig = go.Figure()
     return fig
 
-def _style_graph(fig, data: DataFrame = None):
-    fig.update_layout({"plot_bgcolor": "#222", "paper_bgcolor": "#222"})
-    if data is not None:
-        fig.update_traces(line_color="blue")
-    return fig
+
+

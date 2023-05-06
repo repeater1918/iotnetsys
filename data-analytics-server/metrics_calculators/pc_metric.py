@@ -5,28 +5,20 @@ def calculate_parent_change_ntwk_metrics(df: pd.DataFrame) -> dict:
     """
     For the given timeframe, return an int showing the total number of parent changes.
     """
-    # filter down to relevant meta packets (parent changes)
-    df = df.loc[df['sub_type'] == 'parent'].copy()
-    # calc network metric dictionary with network result
-    network_parent_changes = len(df)
-    #  format as required
-    ntwk_result_dict = [{'network_parent_changes': network_parent_changes}]
+    net_pc_metrics = df.loc[df['sub_type'] == 'parent'].drop('_id', axis=1).copy()
+    net_pc_metrics['env_timestamp'] = net_pc_metrics['env_timestamp'].dt.strftime("%H:%M:%S").astype(str) 
+    net_pc_metrics['average'] = round(net_pc_metrics['sub_type_value'].mean(),2)
+    node_pc_metrics = _calculate_parent_change_node_metrics(net_pc_metrics)
 
-    return ntwk_result_dict
+    return net_pc_metrics.to_dict('records'), node_pc_metrics
 
 
-def calculate_parent_change_node_metrics(df: pd.DataFrame) -> dict:
+def _calculate_parent_change_node_metrics(df: pd.DataFrame) -> dict:
     """
     For the given timeframe, return a dataframe showing the total number of parent changes per node.
     """
-    # filter down to relevant meta packets (parent changes)
-    df = df.loc[df['sub_type'] == 'parent'].copy()
-    # initialise counts for nodes 1 to 7
-    df = df.groupby('node').agg({'_id': 'count'}).reset_index().rename(columns={'_id': 'total_parent_changes'})
-    #  format as required
-    node_result_dict = {}
+    result = {}
     for node in df['node'].unique():
-        node_result_dict[node] = df.loc[df['node'] == node].to_dict('records')
+        result[node] = df.loc[df['node'] == node].to_dict('records')
 
-    # target = {"1": {"pdr_metric": data}}
-    return node_result_dict
+    return result

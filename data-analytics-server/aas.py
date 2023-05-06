@@ -32,7 +32,7 @@ from database.mongodb import Database
 from fastapi import FastAPI
 from models import MetaStream, PacketStream,TopologyStream
 from metrics_calculators import calculate_pdr_metrics, calculate_icmp_metrics, \
-    calculate_parent_change_ntwk_metrics, calculate_parent_change_node_metrics, calculate_received_metrics, calculate_queue_loss, \
+    calculate_parent_change_ntwk_metrics, calculate_received_metrics, calculate_queue_loss, \
 calculate_energy_cons_metrics,calculate_end_to_end_delay, calculate_dead_loss, topology_df_gen
 from models import Timeframe
 
@@ -56,7 +56,7 @@ global update_event
 update_event = datetime.now()
 global packet_stream, meta_stream, topo_stream
 packet_stream = PacketStream(packet_update_limit=100)
-meta_stream = MetaStream(packet_update_limit=8)
+meta_stream = MetaStream(packet_update_limit=1)
 topo_stream = TopologyStream(packet_update_limit=1)
 
 #latest id in database to determine pointer
@@ -203,6 +203,7 @@ def meta_metric_scheduler():
     """
 
     global meta_stream
+    global timeframe_param,timeframe_dls
 
     while True:
         if is_updating_packet.is_set():
@@ -261,19 +262,21 @@ def meta_metric_scheduler():
         except Exception as ex:
             print(f'Error in ENERGY CONS METRIC calc: {ex}')
 
-        try:
-            pc_metric_network_int = calculate_parent_change_ntwk_metrics(df_all_meta_packets)
-            network_df["pc_metric_network"] = pc_metric_network_int
-
-            pc_metric_node = calculate_parent_change_node_metrics(df_all_meta_packets)
-            for node, data in pc_metric_node.items():
-                node_df[node]['pc_metric_node'] = data
+        try:           
+            pc_metric_network_int, node_pc_metric = calculate_parent_change_ntwk_metrics(copy.deepcopy(df_all_meta_packets))
+            # Step 3 - add a label to your data so when it reaches the front end we know who it belongs to
+            network_df['pc_metric'] = pc_metric_network_int
+            #Step 4 - Calculate metric for specific node
+            for node, data in node_pc_metric.items():
+                node_df[node]['pc_metric'] = data
+            
         except Exception as ex:
             print(f'Error in PC METRIC calc: {ex}')       
         """ ########### Place calcs above here ########### """
+        print("Meta metric calculated with this param ", timeframe_param)
         network_df['user_data'] = {"data_timeframe": timeframe_param, "deadline_timeframe": timeframe_dls}
         node_df['user_data'] = {"data_timeframe": timeframe_param, "deadline_timeframe": timeframe_dls}
-
+        
         # Notify threads metric calculation is complete (db updates can resume)
         is_calculating_meta.clear()
 
@@ -466,7 +469,7 @@ async def read_network_df(metric_owner):
         if (network_df['user_data']['data_timeframe'] == timeframe_param) and (network_df['user_data']['deadline_timeframe'] == timeframe_dls):
             response_df = network_df[metric_owner]
         else:
-            raise Exception
+            raise Exception("Stored dataframe invalid with latest user param")
     except Exception as e:
         print(f"API node data call has exception {e}")
         response_df = {}
@@ -487,7 +490,7 @@ async def read_node_df(metric_owner, node: int = 1):
                 response_df = node_df[node][metric_owner]
                 return response_df
             else:
-                raise Exception
+                raise Exception("Stored dataframe invalid with latest user param")
         except Exception as e:
             print(f"API node data call has exception {e}")
             response_df = {}

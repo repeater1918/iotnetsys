@@ -11,9 +11,6 @@ from views.graph_icmp_packets import get_icmp_graph
 from views.graph_pdr import get_pdr_graph
 from views.graph_queue_loss import get_queueloss_graph
 from views.graph_received_packets import get_receivedpackets_graph
-import pandas as pd
-from utils.data_connectors import get_network_data
-
 
 # from app import server
 

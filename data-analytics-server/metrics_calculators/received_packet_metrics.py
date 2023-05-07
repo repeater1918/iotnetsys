@@ -62,23 +62,3 @@ def calculate_metrics(df: pd.DataFrame, env_time_min, bin_size: int) -> pd.DataF
     # apply bin label
     df['bins'] = df.reset_index()['bins'].apply(bin_label)
     return df.to_dict('records')
-
-# def calculate_metrics_node(df: pd.DataFrame, env_time_min, bin_size: int) -> pd.DataFrame:
-#     df = df.groupby(['node','bins']).agg({'packet_id': 'count', 'env_timestamp': max}).rename(columns={'packet_id': 'total_packets'})
-#     df = df.reset_index()
-    
-#     df = add_env_timestamps(df, env_time_min, bin_size)
-    
-#     for node in df['node'].unique():
-#         packets = df.loc[df['node'] == node, 'total_packets']
-#         for i in range(1, len(packets)): 
-#             packets[i] += packets[i-1]
-#         df.loc[df['node'] == node, 'total_packets'] = packets
-#     breakpoint()
-#     df['bins'] = df.reset_index()['bins'].apply(bin_label)
-    
-#     result = {}
-#     for node in df['node'].unique():
-#         result[node] = df.loc[df['node'] == node].to_dict('records')
-#     #breakpoint()
-#     return result

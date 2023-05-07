@@ -28,12 +28,13 @@ layout = html.Div(
         )),
         dbc.Row(
             [
+                dbc.Col(get_pdr_graph(is_init=True), md=6, style={"margin-top": "16px"}),
                 dbc.Col(get_receivedpackets_graph(is_init=True), md=6, style={"margin-top": "16px"}),
-                dbc.Col(get_queueloss_graph(is_init=True), md=6, style={"margin-top": "16px"}),
                 dbc.Col(graph_e2e_metric, md=6, style={"margin-top": "16px"}),
                 dbc.Col(graph_deadloss_metric, md=6, style={"margin-top": "16px"}),
-                dbc.Col(get_pdr_graph(is_init=True), md=6, style={"margin-top": "16px"}),
                 dbc.Col(get_icmp_graph(is_init=True), md=6, style={"margin-top": "16px"}),
+                dbc.Col(get_queueloss_graph(is_init=True), md=6, style={"margin-top": "16px"}),
+                
 
             ]),
         dbc.Row([

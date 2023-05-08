@@ -26,10 +26,11 @@ def get_receivedpackets_graph(data = None, is_init=False, node_id=False, is_empt
         #  update has occurred but not data, return a empty placeholder
         return _get_place_holder()
     
-    receivedpackets_graph = px.line(
+    receivedpackets_graph = px.area(
             data,
             x="env_timestamp",
             y="total_packets",
+            markers=True,
             labels={"env_timestamp": "Time Invervals", "total_packets": "Number of packets"},
         )
     
@@ -37,11 +38,9 @@ def get_receivedpackets_graph(data = None, is_init=False, node_id=False, is_empt
     return receivedpackets_graph
 
 def _get_place_holder():
-    fig = _style_graph(px.bar())
+    fig = _style_graph(px.line())
     return fig
 
 def _style_graph(fig, data: DataFrame = None):
     fig.update_layout({"plot_bgcolor": "#222", "paper_bgcolor": "#222"})
-    if data is not None:
-        fig.update_traces(line_color="blue")
     return fig

@@ -135,7 +135,7 @@ def packet_metric_scheduler():
         """ ########### Place calcs below here ########### """
 
         try:
-            pdr_metric_dict, pdr_node_metric_dict = calculate_pdr_metrics(copy.deepcopy(df_all_packets), timeframe=60000, bins=10)
+            pdr_metric_dict, pdr_node_metric_dict = calculate_pdr_metrics(copy.deepcopy(df_all_packets), timeframe=timeframe_param*1000, bins=10)
             network_df['pdr_metric'] = pdr_metric_dict 
             for node, data in pdr_node_metric_dict.items():
                 node_df[node]['pdr_metric'] = data

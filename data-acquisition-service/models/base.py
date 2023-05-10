@@ -5,7 +5,7 @@ import re
 
 class BaseLog(object):
 
-    def __init__(self, timestamp: int, node: int, log: str, start_timestamp: datetime) -> None:
+    def __init__(self, timestamp: int, node: int, log: str, start_timestamp: datetime, env_timestamp: datetime) -> None:
         self.timestamp = int(timestamp)
         self.sessionid = start_timestamp
         self.node = node if isinstance(node, int) else int(node[3:])
@@ -20,7 +20,7 @@ class BaseLog(object):
 
     @staticmethod
     def from_string(input: str, start_timestamp: datetime):
-        components = input.strip().split('\t') + [start_timestamp] 
+        components = input.strip().split('\t') + [start_timestamp] + [start_timestamp]
         return BaseLog(*components)
 
     def to_dict(self) -> Dict:

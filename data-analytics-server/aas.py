@@ -2,15 +2,10 @@
 AAS:
 Watches mongoDB for update - decides when to send data to front-end - responds to front end requests
 
-TODO:
-
-1. Define schemas so AAS knows what type of document was inserted (send/rec/scmp etc.)
-2. Based on front end requirments decide when and how to send updates to front-end
-3. Add processing logic to calculation metrics 
-
 """
-from pathlib import Path
 import os
+from pathlib import Path
+
 from dotenv import load_dotenv
 
 if os.environ.get('DEPLOYMENT', 'dev') == 'dev':
@@ -19,22 +14,23 @@ if os.environ.get('DEPLOYMENT', 'dev') == 'dev':
 
 print(f"Running in mode -> {os.environ.get('DEPLOYMENT', 'dev')}")
 
+import copy
 import sys
-import pandas as pd
 import threading
 import time
-from datetime import datetime
-from typing import Dict, List, Union
-import copy
 from collections import defaultdict
-import requests, json
+from typing import Union
+
 from database.mongodb import Database
 from fastapi import FastAPI
-from models import MetaStream, PacketStream,TopologyStream
-from metrics_calculators import calculate_pdr_metrics, calculate_icmp_metrics, \
-    calculate_parent_change_ntwk_metrics, calculate_received_metrics, calculate_queue_loss, \
-calculate_energy_cons_metrics,calculate_end_to_end_delay, calculate_dead_loss, topology_df_gen
-from models import Timeframe
+from metrics_calculators import (calculate_dead_loss,
+                                 calculate_end_to_end_delay,
+                                 calculate_energy_cons_metrics,
+                                 calculate_icmp_metrics,
+                                 calculate_parent_change_ntwk_metrics,
+                                 calculate_pdr_metrics, calculate_queue_loss,
+                                 calculate_received_metrics, topology_df_gen)
+from models import MetaStream, PacketStream, Timeframe, TopologyStream
 
 FRONT_END_URL = "http://127.0.0.1:8050/data-update"
 
@@ -52,10 +48,8 @@ timeframe_dls = 60
 # Global reference variables to manage watchers
 global response_history
 response_history = 0
-global update_event
-update_event = datetime.now()
 global packet_stream, meta_stream, topo_stream
-packet_stream = PacketStream(packet_update_limit=100)
+packet_stream = PacketStream(packet_update_limit=20)
 meta_stream = MetaStream(packet_update_limit=1)
 topo_stream = TopologyStream(packet_update_limit=1)
 
@@ -84,7 +78,7 @@ is_updating_topo = threading.Event()
 is_calculating_topo = threading.Event()
 
 
-# We will use these as API end points when the user changes parameters (via Dashboard)
+# API end points for user initiated changes to parameters (via Dashboard)
 @app.get("/")
 async def root():
     return {"network_df": sys.getsizeof(network_df), "node_df": sys.getsizeof(node_df)}
@@ -104,7 +98,7 @@ async def root(data: Timeframe):
 
 def packet_metric_scheduler():
     """
-    Function runs perdically (~5sec) and checks if metric update is warranted
+    Function runs periodical (~5sec) and checks if metric update is warranted
     based on the minimum number of new log packets required to trigger an update
 
     Provides a dataframe -> "df_all_packets" which provides all packet logs to date
@@ -148,7 +142,9 @@ def packet_metric_scheduler():
             e2e_dict = e2e_metric.to_dict("records")
             network_df['e2e_metric'] = e2e_dict
             # Nwe - to calculate end-to-end delay (node level)
-            for node in range(2,8):
+            for node in df_all_packets['node'].unique():
+                if node == 1 or node == 2:
+                    continue
                 e2e_node_metric = calculate_end_to_end_delay(copy.deepcopy(df_all_packets), timeframe=timeframe_param*1000, bins=10,nodeID=node)
                 e2e_node_metric_dict = e2e_node_metric.to_dict("records")
                 node_df[node]['e2e_metric'] = e2e_node_metric_dict
@@ -161,7 +157,9 @@ def packet_metric_scheduler():
             deadloss_dict = deadloss_metric.to_dict("records")
             network_df['deadloss_metric'] = deadloss_dict 
             # Nwe - to calculate dead loss (node level)
-            for node in range(2,8):
+            for node in df_all_packets['node'].unique():
+                if node == 1 or node == 2:
+                    continue
                 deadloss_node_metric = calculate_dead_loss(copy.deepcopy(df_all_packets), timeframe=timeframe_param*1000,timeframe_deadline=timeframe_dls,bins=10,nodeID=node)
                 deadloss_node_metric_dict = deadloss_node_metric.to_dict("records")
                 node_df[node]['deadloss_metric'] = deadloss_node_metric_dict
@@ -182,19 +180,19 @@ def packet_metric_scheduler():
         """ ########### Place calcs above here ########### """
 
         # Add timeframe & deadline loss to track which data used to calculate metrics
-        print(f"Packet metric calculated using this param data {timeframe_param}; deadline {timeframe_dls}")
+
         network_df['user_data'] = {"data_timeframe": timeframe_param, "deadline_timeframe": timeframe_dls}
         node_df['user_data'] = {"data_timeframe": timeframe_param, "deadline_timeframe": timeframe_dls}
 
         # Notify threads metric calculation is complete (db updates can resume)
         is_calculating_packet.clear()
 
-        time.sleep(5) 
+        time.sleep(2) 
 
 
 def meta_metric_scheduler():
     """
-    Function runs perdically (~30sec) and checks if metric update is warranted
+    Function runs periodically and checks if metric update is warranted
     based on the minimum number of new meta packets required to trigger an update
 
     Provides a dataframe -> "df_all_meta_packets" which provides all meta logs to date
@@ -208,12 +206,12 @@ def meta_metric_scheduler():
     while True:
         if is_updating_packet.is_set():
             # print("MetaMetricScheduler: skip calc as db update is active")
-            time.sleep(15)
+            time.sleep(10)
             continue
 
         if not meta_stream.is_update_ready:
             # print("MetaMetricScheduler: skip calc not enough new packets")
-            time.sleep(30)
+            time.sleep(10)
             continue
 
         # Notify threads that metric calculation is in process
@@ -273,14 +271,14 @@ def meta_metric_scheduler():
         except Exception as ex:
             print(f'Error in PC METRIC calc: {ex}')       
         """ ########### Place calcs above here ########### """
-        print("Meta metric calculated with this param ", timeframe_param)
+
         network_df['user_data'] = {"data_timeframe": timeframe_param, "deadline_timeframe": timeframe_dls}
         node_df['user_data'] = {"data_timeframe": timeframe_param, "deadline_timeframe": timeframe_dls}
         
         # Notify threads metric calculation is complete (db updates can resume)
         is_calculating_meta.clear()
 
-        time.sleep(15) 
+        time.sleep(5) 
 
 def topology_event_scheduler():
      
@@ -288,12 +286,12 @@ def topology_event_scheduler():
      while True:
         if is_updating_topo.is_set():
             #print("TopoEventScheduler: skip calc as db update is active")
-            time.sleep(15)
+            time.sleep(10)
             continue
 
         if not topo_stream.is_update_ready:
             #print("TopoEventScheduler: skip calc not enough new packets")
-            time.sleep(30)
+            time.sleep(10)
             continue
         
         # Notify threads that metric calculation is in process
@@ -310,7 +308,7 @@ def topology_event_scheduler():
         df_all_topo_packets =None #clear computed
         is_calculating_topo.clear()
 
-        time.sleep(15) 
+        time.sleep(5) 
 
 
 
@@ -331,11 +329,11 @@ def watch_packetlogs() -> None:
         for name in node_collection_names:
 
             data, id_max= client.find_by_pagination(
-                collection_name=name, last_id=last_packet_id.get(name), page_size=10, sessionid=sessionid
+                collection_name=name, last_id=last_packet_id.get(name), page_size=100, sessionid=sessionid
             )
             data_list.append(data)
             if id_max != None:
-                #if id_max is none, don't re-assign (it makes last_packet_id points to begining again)
+                #if id_max is none, don't re-assign (it makes last_packet_id points to beginning again)
                 last_packet_id[name] = id_max
 
         # Exclude None results
@@ -396,6 +394,7 @@ def watch_metalogs() -> None:
 
 
 def watch_topology() -> None:
+    """Periodically queries MongoDB to check for new typology changes """
     while True:
 
         while is_calculating_topo.is_set():
@@ -431,38 +430,6 @@ def watch_topology() -> None:
         time.sleep(15)
 
 
-# This is called when a single view/graph data update is sent to front-end
-# The Dash server is on localhost port 8050 for development
-def send_data_to_front_end(response: List[Dict]):
-    global response_history, update_event
-
-    # store some stats for how many updates have happened and when last update occured
-    update_time = datetime.now()
-    seconds_since_last_update = (update_time - update_event).seconds
-    # print(
-    #     f"API POST: Sending data for [{response['owner']}] - last update: {seconds_since_last_update} seconds ago"
-    # )
-    response_history = response_history + 1
-    response["update_count"] = response_history
-    #print(response)
-    #breakpoint()
-    try:
-        # send a post request to the Dash end point: http://127.0.0.1:8050/data-update
-        req = requests.post(
-            url=FRONT_END_URL, json=response
-        )  # FIXME this may need to go into a thread/coroutine as it is blocking
-    except requests.exceptions.Timeout as e:
-        # connection made but request timed out
-        # print(f"Timeout sending data to dash = {e}")
-        pass
-    except requests.exceptions.RequestException as e:
-        # If the dash server is not running this error will typically trigger
-        # print(f"Could not reach front-end - is server running? - {e}")
-        pass
-
-    update_event = datetime.now()
-
-
 @app.get("/api/networkmetric/{metric_owner}")
 async def read_network_df(metric_owner):
     try:
@@ -484,7 +451,6 @@ async def read_node_df(metric_owner, node: int = 1):
     response_df = {}
     if node > 1:
         #node 1 is root already, no need to get it
-        #print(f"API query for {node}")
         try:
             if (node_df['user_data']['data_timeframe'] == timeframe_param) and (node_df['user_data']['deadline_timeframe'] == timeframe_dls):
                 response_df = node_df[node][metric_owner]

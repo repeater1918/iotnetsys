@@ -119,6 +119,6 @@ def submit_btn(n_clicks, data):
         return "/sessionlist"
     else:
         res = send_sessionid(data['sessionid'])
-        print(f"Function submit_btn send {res} to AAS")
+        print(f"Send session {res} to AAS")
         
         return '/'

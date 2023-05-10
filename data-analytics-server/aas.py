@@ -452,13 +452,13 @@ async def read_network_df(metric_owner):
 @app.get("/api/nodemetric/{metric_owner}")
 async def read_node_df(metric_owner, node: int = 1):
     """API GET to return calculated node metric dataframe"""
-    global node_df
     response_df = {}
-    if node > 1:
+    if node > 0:
         #node 1 is root already, no need to get it
         #print(f"API query for {node}")
         try:
-            if (node_df['user_data']['data_timeframe'] == timeframe_param) and (node_df['user_data']['deadline_timeframe'] == timeframe_dls):
+            if (node_df['user_data']['data_timeframe'] == timeframe_param) and (node_df['user_data']['deadline_timeframe'] == timeframe_dls) and \
+                (node_df['user_data']['sessionid'] == sessionid):
                 response_df = node_df[node][metric_owner]
                 return response_df
             else:
@@ -520,7 +520,7 @@ async def post_session_data(data: SessionID):
         meta_stream.delete_df()
         packet_stream.delete_df()
         topo_stream.delete_df()
-        topo_dict = {}
+        topo_dict.clear(); network_df.clear(); node_df.clear()
         last_meta_id = None
         last_packet_id = {}
         last_topo_id = None

@@ -3,7 +3,7 @@ from datetime import datetime
 from typing import Dict
 
 from models.base import BaseLog
-
+from datetime import timedelta
 
 class MetaLog(BaseLog):
     def __init__(self, timestamp: int, sessionid: datetime, node: int, log: str, env_timestamp: datetime, log_fields: list) -> None:

@@ -25,7 +25,7 @@ from datetime import datetime
 from dash import Input, Output, State, dcc, html, ctx
 from dash_bootstrap_components._components.Container import Container
 from flask import request
-from components.navigation import navbar, nav_drawer, top_page_heading
+from components.navigation import navbar
 
 dbt.load_figure_template("darkly")
 
@@ -35,44 +35,20 @@ app.layout = html.Div(
         navbar,
         dcc.Location(id='url', refresh=False),
         # dcc.Store stores the session var
-        dcc.Store(id='session_data'),
+        dcc.Store(id='usr_session_data', storage_type='session'),
         dcc.Interval(
             id="interval-component",
             interval= UPDATE_INTERVAL,  
         ),
         html.Div(id='usr-tz', style={"display":"none"}),
-        html.Div(
-            className="wrapper",
-            
+        html.Div(            
+            id="wrapper-drawer",
             children=[
-                nav_drawer,
-                html.Div(
-                    className="remaining-width",
-                    id="page_heading",
-                    children=[
-                        *top_page_heading("Network Level")                       
-                        
-                    ],
-                ),
+                dbc.Row(dbc.Col(html.Div(children=dash.page_container)))
             ],
         ),
     ]
 )
-
-#child_container = dbc.Row(dbc.Col(html.Div(children=dash.page_container)))
-
-@app.callback(
-        Output("page_heading", 'children'),
-        Input('url', 'pathname'),
-        
-)
-def load_heading(pathname):
-    if 'node_view' in pathname:
-        node_heading_str = f"Node {pathname.split('/')[-1]}"
-        return top_page_heading(node_heading_str)
-    else: 
-        return top_page_heading("Network Level")
-
 
 #App management callbacks
 @app.callback(
@@ -80,6 +56,7 @@ def load_heading(pathname):
     Input("dropdown-timeframe", "value")
 )
 def set_timeframe(value):
+    print(f"Timeframe set {value}")
     if value == None:
         send_timeframe(60000) #default 1 min
     else:
@@ -95,6 +72,8 @@ def set_timeframe(value):
         send_dlloss(25) #default 25ms
     else:
         send_dlloss(value)
+
+
 
 #Client callback to get tz
 app.clientside_callback(

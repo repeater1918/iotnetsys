@@ -9,7 +9,6 @@ class TopologyLog(BaseLog):
         super().__init__(timestamp, node, log, sessionid, env_timestamp)        
         self.role = 'sensor'
         self.parent = log_fields[1]
-        self.sessionid = sessionid
         self.type = 'topology'
         if log_fields[2] != None:
             self.node = log_fields[2]

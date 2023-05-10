@@ -20,7 +20,7 @@ import threading
 import time
 from collections import defaultdict
 from typing import Union
-
+from datetime import datetime
 from database.mongodb import Database
 from fastapi import FastAPI
 from metrics_calculators import (calculate_dead_loss,
@@ -30,7 +30,7 @@ from metrics_calculators import (calculate_dead_loss,
                                  calculate_parent_change_ntwk_metrics,
                                  calculate_pdr_metrics, calculate_queue_loss,
                                  calculate_received_metrics, topology_df_gen)
-from models import MetaStream, PacketStream, Timeframe, TopologyStream
+from models import MetaStream, PacketStream, Timeframe, TopologyStream, SessionID
 
 FRONT_END_URL = "http://127.0.0.1:8050/data-update"
 
@@ -64,10 +64,11 @@ global sessionid
 sessionid = None
 
 #global dictionary to store calculated value
-global network_df,node_df,topo_df
+global network_df,node_df,topo_df, topo_dict
 network_df = {} #this is storing dataframe for network level metric in format {"owner_metric": metric_dict}, example: {"pdr_metric": data}
 node_df = defaultdict(dict) #this is storing dataframe for node level metric in format {"nodeid": {"owner_metric": metric_dict}}, example: {"1": {"pdr_metric": data}}
 topo_df = {}
+topo_dict = {}
 
 # Events (bools) to help prevent race conditions between metric and db watchers
 is_updating_packet = threading.Event()
@@ -87,12 +88,14 @@ async def root():
 async def root(data: Timeframe):
     global timeframe_param 
     timeframe_param = data.timeframe
+    packet_stream.is_update_ready = True    
     print(data.timeframe)
 
 @app.post("/api/timeframe_dls")
 async def root(data: Timeframe):
     global timeframe_dls 
     timeframe_dls = data.timeframe
+    packet_stream.is_update_ready = True
     print(data.timeframe)
 
 
@@ -125,9 +128,7 @@ def packet_metric_scheduler():
         # This dataframe represents all historical packets
         df_all_packets = packet_stream.flush_stream().copy(deep=True)
 
-
         """ ########### Place calcs below here ########### """
-
         try:
             pdr_metric_dict, pdr_node_metric_dict = calculate_pdr_metrics(copy.deepcopy(df_all_packets), timeframe=timeframe_param*1000, bins=10)
             network_df['pdr_metric'] = pdr_metric_dict 
@@ -180,10 +181,9 @@ def packet_metric_scheduler():
         """ ########### Place calcs above here ########### """
 
         # Add timeframe & deadline loss to track which data used to calculate metrics
-
-        network_df['user_data'] = {"data_timeframe": timeframe_param, "deadline_timeframe": timeframe_dls}
-        node_df['user_data'] = {"data_timeframe": timeframe_param, "deadline_timeframe": timeframe_dls}
-
+        #print(f"Packet metric calculated using this param data {timeframe_param}; deadline {timeframe_dls}; session {sessionid}")
+        network_df['user_data'] = {"data_timeframe": timeframe_param, "deadline_timeframe": timeframe_dls, "sessionid": sessionid}
+        node_df['user_data'] = {"data_timeframe": timeframe_param, "deadline_timeframe": timeframe_dls, "sessionid": sessionid}
         # Notify threads metric calculation is complete (db updates can resume)
         is_calculating_packet.clear()
 
@@ -204,7 +204,7 @@ def meta_metric_scheduler():
     global timeframe_param,timeframe_dls
 
     while True:
-        if is_updating_packet.is_set():
+        if is_updating_meta.is_set():
             # print("MetaMetricScheduler: skip calc as db update is active")
             time.sleep(10)
             continue
@@ -271,10 +271,10 @@ def meta_metric_scheduler():
         except Exception as ex:
             print(f'Error in PC METRIC calc: {ex}')       
         """ ########### Place calcs above here ########### """
-
-        network_df['user_data'] = {"data_timeframe": timeframe_param, "deadline_timeframe": timeframe_dls}
-        node_df['user_data'] = {"data_timeframe": timeframe_param, "deadline_timeframe": timeframe_dls}
-        
+        #print(f"Meta metric calculated with this param {sessionid}") 
+        network_df['user_data'] = {"data_timeframe": timeframe_param, "deadline_timeframe": timeframe_dls, "sessionid": sessionid}
+        node_df['user_data'] = {"data_timeframe": timeframe_param, "deadline_timeframe": timeframe_dls, "sessionid": sessionid}
+                
         # Notify threads metric calculation is complete (db updates can resume)
         is_calculating_meta.clear()
 
@@ -282,7 +282,7 @@ def meta_metric_scheduler():
 
 def topology_event_scheduler():
      
-     global topo_df
+     global topo_df, topo_dict,timeframe_param,timeframe_dls, topo_dict
      while True:
         if is_updating_topo.is_set():
             #print("TopoEventScheduler: skip calc as db update is active")
@@ -301,11 +301,12 @@ def topology_event_scheduler():
         df_all_topo_packets = topo_stream.flush_stream().copy(deep=True)
         try:
             topo_df = topology_df_gen(copy.deepcopy(df_all_topo_packets))
-            topo_df = topo_df.to_dict('records')
+            topo_df= topo_df.to_dict('records')
         except Exception as ex:
             print(f"Error in topology df: {ex}")
         # Notify threads metric calculation is complete (db updates can resume)
-        df_all_topo_packets =None #clear computed
+        print(f"Topology calculated with this param {sessionid}")
+        topo_dict['user_data'] = {"sessionid": sessionid}
         is_calculating_topo.clear()
 
         time.sleep(5) 
@@ -317,7 +318,7 @@ def watch_packetlogs() -> None:
     while True:
         # if the metric calculation function (watch_metrics) is active, pause data update
         while is_calculating_packet.is_set():
-            time.sleep(5)
+            time.sleep(10)
 
         global last_packet_id, packet_stream, sessionid
 
@@ -342,7 +343,7 @@ def watch_packetlogs() -> None:
         if len(data_list) == 0:
             # print("WatchPcktLogs: no new packet logs in DB, putting watcher to sleep")
             is_updating_packet.clear()
-            time.sleep(15)
+            time.sleep(30)
             continue
 
         # Unwrap list of list node resuls
@@ -371,7 +372,7 @@ def watch_metalogs() -> None:
         
         # Query 2: Check the metalog collection and get new document starting from last result
         data, id_max = client.find_by_pagination(
-            collection_name="metalogs", last_id=last_meta_id, page_size=10, sessionid=sessionid
+            collection_name="metalogs", last_id=last_meta_id, page_size=50, sessionid=sessionid
         )
 
         if data is None:
@@ -394,7 +395,7 @@ def watch_metalogs() -> None:
 
 
 def watch_topology() -> None:
-    """Periodically queries MongoDB to check for new typology changes """
+    """Periodically queries MongoDB to check for new typology changes """ 
     while True:
 
         while is_calculating_topo.is_set():
@@ -405,14 +406,15 @@ def watch_topology() -> None:
 
         #print("Topology data update in progress")
         global sessionid
-        sessionid = client.find_session_id(collection_name="topology")[-1]         
-        
+        if sessionid == None:
+            sessionid = client.find_session_id(collection_name="topology")[-1]    
+            last_topo_id = None
         data, id_max = client.find_by_pagination(
-            collection_name="topology", last_id = last_topo_id, page_size=10, sessionid=sessionid
+            collection_name="topology", last_id = last_topo_id, page_size=30, sessionid=sessionid
         )
 
         if data is None:
-            # print("WatchMetaLogs: no new topo logs in DB, putting watcher to sleep")'
+            #print("WatchTopoLogs: no new topo logs in DB, putting watcher to sleep")
             is_updating_topo.clear()
             time.sleep(30)
             continue
@@ -427,16 +429,18 @@ def watch_topology() -> None:
         # print(
         #     f"WatchTopoLogs: stream size = {len(meta_stream.stream)}, all logs = {len(meta_stream.df_packet_hist)}, update ready: {meta_stream.is_update_ready}"
         # )
-        time.sleep(15)
+        time.sleep(20)
 
 
 @app.get("/api/networkmetric/{metric_owner}")
 async def read_network_df(metric_owner):
+    """API GET to return calculated network metric dataframe"""
     try:
-        if (network_df['user_data']['data_timeframe'] == timeframe_param) and (network_df['user_data']['deadline_timeframe'] == timeframe_dls):
+        if (network_df['user_data']['data_timeframe'] == timeframe_param) and (network_df['user_data']['deadline_timeframe'] == timeframe_dls) and \
+        (network_df['user_data']['sessionid'] == sessionid):
             response_df = network_df[metric_owner]
         else:
-            raise Exception("Stored dataframe invalid with latest user param")
+            raise Exception("Calculated dataframe is not using current UI timeframe & dl")
     except Exception as e:
         print(f"API node data call has exception {e}")
         response_df = {}
@@ -447,16 +451,18 @@ async def read_network_df(metric_owner):
 #Query format for nodelv: AAS_URI/nodelv_data/pdr_metric?node=2 
 @app.get("/api/nodemetric/{metric_owner}")
 async def read_node_df(metric_owner, node: int = 1):
+    """API GET to return calculated node metric dataframe"""
     global node_df
     response_df = {}
     if node > 1:
         #node 1 is root already, no need to get it
+        #print(f"API query for {node}")
         try:
             if (node_df['user_data']['data_timeframe'] == timeframe_param) and (node_df['user_data']['deadline_timeframe'] == timeframe_dls):
                 response_df = node_df[node][metric_owner]
                 return response_df
             else:
-                raise Exception("Stored dataframe invalid with latest user param")
+                raise Exception("Calculated dataframe is not using current UI timeframe & dl")
         except Exception as e:
             print(f"API node data call has exception {e}")
             response_df = {}
@@ -466,25 +472,65 @@ async def read_node_df(metric_owner, node: int = 1):
 
 @app.get("/api/topodata/")
 async def read_topo_db(q: Union[str, None] = None):
+    """API GET to return calculated topology dataframe"""
     supported_query = ['node_sensor', 'node_parent']
-    
-    if q in supported_query:
-        if q == 'node_sensor':
-            res = [{"node": x['node'], "hop_count":x['hop_count']} for x in topo_df if x['role'] == 'sensor']          
-        if q == 'node_parent':
-            res = [x['node'] for x in topo_df if x['role'] == 'server']
-    else:
-        res = topo_df
-    if len(topo_df) == 0:
+    try:
+        if (topo_dict['user_data']['sessionid'] == sessionid):
+            if q in supported_query:
+                if q == 'node_sensor':
+                    res = [{"node": x['node'], "hop_count":x['hop_count']} for x in topo_df if x['role'] == 'sensor']          
+                if q == 'node_parent':
+                    res = [x['node'] for x in topo_df if x['role'] == 'server']
+            else:
+                res = topo_df    
+        else:
+            raise Exception("Calculated dataframe is not using current UI timeframe & dl")
+    except Exception as e:
+        print(f"API topodata has exception {e}")
+        res = []
+
+    if len(res) == 0:
         print("No topology data")
     return res
 
 
 @app.get("/api/sessiondata")
-async def read_session_data():
-    res = client.find_session_id(collection_name='topology')
-    res = {"Session Time": res}
+async def read_session_data(q: Union[str, None] = None):
+    """API GET to return list of session/experiments"""
+    if q == 'current':
+        global sessionid
+        res = sessionid
+    else:
+        res = client.find_session_id(collection_name='topology')
+        res = {"sessionid": res}
     return res
+
+
+@app.post("/api/sessiondata")
+async def post_session_data(data: SessionID):
+    """Receive new sessionid from UI and delete previous df, default: sessionid is the latest"""
+    global sessionid, last_meta_id, last_packet_id, last_topo_id, topo_dict
+
+    try:
+        sessionid_dt = datetime.fromisoformat(data.sessionid)
+    except:
+        sessionid_dt = client.find_session_id(collection_name="topology")[-1]  
+    if sessionid_dt != sessionid:
+        print(f"All data frame are reset because difference in {sessionid_dt} and {sessionid} ")
+        meta_stream.delete_df()
+        packet_stream.delete_df()
+        topo_stream.delete_df()
+        topo_dict = {}
+        last_meta_id = None
+        last_packet_id = {}
+        last_topo_id = None
+        sessionid = sessionid_dt  
+        if sessionid_dt != '':
+           sessionid = copy.deepcopy(sessionid_dt)
+        else:
+            sessionid = client.find_session_id(collection_name="topology")[-1]   
+        
+    return sessionid
 
 
 # create a thread to run the packet log collection data fetch

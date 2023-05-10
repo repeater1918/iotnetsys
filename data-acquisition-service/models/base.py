@@ -2,6 +2,7 @@ from abc import abstractmethod
 from datetime import datetime, timedelta
 from typing import Dict, List, Union
 import re 
+import copy
 
 class BaseLog(object):
 

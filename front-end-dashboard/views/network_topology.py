@@ -1,10 +1,10 @@
-from dash import Dash, html, Input, Output, State
+from dash import html
 import dash_cytoscape as cyto
 import dash_bootstrap_components as dbc
-import dash
-from utils.data_connectors import get_topo_data
 
-
+"""
+Includes components for a network topology diagram: default_stylesheet, & cytoscape graph
+"""
 default_stylesheet = [
     {   'selector': 'node',
         'style': {
@@ -32,10 +32,12 @@ topo_graph = html.Div([
     html.Div("Topology Diagram", className='graph-title'),
     cyto.Cytoscape(
         id='topology-graph',
-        layout={'name': 'breadthfirst'},
+        userPanningEnabled = False,
+        responsive = True,
+        layout={'name': 'breadthfirst','fit': True },
         elements=[],
         stylesheet=default_stylesheet,
-        style={'width': '100%', 'left': '25px','height': '450px', 'z-index': -1},
+        style={'width': '100%', 'left': '0px','height': '450px', 'z-index': -1},
         
     ),
     dbc.Toast(

@@ -133,10 +133,7 @@ def packet_metric_scheduler():
         df_all_packets = packet_stream.flush_stream().copy(deep=True)
 
         """ ########### Place calcs below here ########### """
-        sensor_node = []
-        for item in topo_df:
-            if item['role'] == 'sensor':
-                sensor_node.append(item['node'])
+        
 
         try:
             pdr_metric_dict, pdr_node_metric_dict = calculate_pdr_metrics(copy.deepcopy(df_all_packets), timeframe=timeframe_param*1000, bins=10)
@@ -147,14 +144,17 @@ def packet_metric_scheduler():
             print(f'Error in PDR METRIC calc: {ex}')    
 
         try:
+            sensor_node = []
+            for item in topo_df:
+                 if item['role'] == 'sensor':
+                      sensor_node.append(item['node'])
+                      
             # Nwe - to calculate end-to-end delay (network level)
             e2e_metric = calculate_end_to_end_delay(copy.deepcopy(df_all_packets), timeframe=timeframe_param*1000, bins=10,nodeID=-1)
             e2e_dict = e2e_metric.to_dict("records")
             network_df['e2e_metric'] = e2e_dict
             # Nwe - to calculate end-to-end delay (node level)
-            for node in df_all_packets['node'].unique():
-                if node == 1 or node == 2:
-                    continue
+            for node in sensor_node:
                 e2e_node_metric = calculate_end_to_end_delay(copy.deepcopy(df_all_packets), timeframe=timeframe_param*1000, bins=10,nodeID=node)
                 e2e_node_metric_dict = e2e_node_metric.to_dict("records")
                 node_df[node]['e2e_metric'] = e2e_node_metric_dict
@@ -167,9 +167,7 @@ def packet_metric_scheduler():
             deadloss_dict = deadloss_metric.to_dict("records")
             network_df['deadloss_metric'] = deadloss_dict 
             # Nwe - to calculate dead loss (node level)
-            for node in df_all_packets['node'].unique():
-                if node == 1 or node == 2:
-                    continue
+            for node in sensor_node:
                 deadloss_node_metric = calculate_dead_loss(copy.deepcopy(df_all_packets), timeframe=timeframe_param*1000,timeframe_deadline=timeframe_dls,bins=10,nodeID=node)
                 deadloss_node_metric_dict = deadloss_node_metric.to_dict("records")
                 node_df[node]['deadloss_metric'] = deadloss_node_metric_dict

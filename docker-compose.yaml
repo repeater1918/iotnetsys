@@ -24,10 +24,10 @@ services:
   nginx:
     build: ./
     container_name: ngx
+    image: repeater918/iontnetsys-proxy
     ports:
       - "80:80"
       - "443:443"
     depends_on:
       - front-end-dashboard
       - analytics-api-srv
-      

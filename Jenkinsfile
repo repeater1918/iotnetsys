@@ -1,7 +1,7 @@
 pipeline {
     agent any
       environment {
-    DOCKERHUB_CREDENTIALS = credentials('dockerhub')
+    DOCKERHUB_CREDENTIALS = credentials('dockerhub-cred')
     DOCKER_REGISTRY_URL = 'hub.docker.com'
     DOCKER_COMPOSE_FILE = 'docker-compose.yaml'
   }
@@ -15,7 +15,7 @@ pipeline {
         stage("Test Docker registry connection") {
             steps {
                 script {
-                    docker.withRegistry(DOCKER_REGISTRY_URL, DOCKERHUB_CREDENTIALS) {
+                    docker.withRegistry('', DOCKERHUB_CREDENTIALS) {
                         def registry = docker.getRegistry()
                         echo "Connected to Docker registry: ${registry.url}"
                     }

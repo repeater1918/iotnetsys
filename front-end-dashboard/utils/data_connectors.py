@@ -9,6 +9,7 @@ supported_metrics = ["pdr_metric","icmp_metric","received_metric", "e2e_metric",
 node_supported_metrics = [*supported_metrics, "pc_metric"]
 
 def get_network_data(metric = None):
+    """Request API to get network metrics"""
     result_dict = {}
     
     for v in supported_metrics:
@@ -26,6 +27,7 @@ def get_network_data(metric = None):
 
 
 def get_node_data(nodeid, metric=None):
+    """Request API to get node metrics"""
     result_dict = {}    
     
     #loop through all metric
@@ -48,7 +50,9 @@ def get_topo_data(query = None):
         res = res.json()
     else:
         res = []
-    return res 
+   
+    
+    return res
 
 def get_session_data():
     res = requests.get(AAS_URI+f"sessiondata")
@@ -72,3 +76,11 @@ def send_dlloss(milliseconds: int):
     #print(f"Dloss API call status: {res.status_code}")
     return res
     # TODO error management
+
+def send_sessionid(sessionid: str):
+    """Send sessionid from UI to AAS"""
+    result_dict = {"sessionid": sessionid}
+    res = requests.post(AAS_URI+f"sessiondata", json=result_dict) 
+    res = res.json()
+    return res
+        

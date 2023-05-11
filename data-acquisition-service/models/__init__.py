@@ -16,6 +16,7 @@ def parse_incoming(data: str, start_time: datetime) -> Union[MetaLog, PacketLog]
         #Spurious log message detected
         return None 
     log = _identify_log(base_log)
+
     return log
 
 

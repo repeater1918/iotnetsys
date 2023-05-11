@@ -138,6 +138,8 @@ def update_topology_dict(log, log_type):
 
     return res
 
+#delete_all_collections(client)
+
 while not proc.poll():
     time.sleep(0)  # FIXME - delays input response by 1 second for readability
 
@@ -152,10 +154,9 @@ while not proc.poll():
         if log == None:
             #print("skipped", response)
             continue       
-
+        
         #Handle dynamic topology data
         update_topology_dict(log=log, log_type=log.type)
-        
         #Database operations        
         if isinstance(log, PacketLog) or isinstance(log, MetaLog):
         # if packet log collection = 'packetlogs' else 'metalogs' -> send to mongoDB

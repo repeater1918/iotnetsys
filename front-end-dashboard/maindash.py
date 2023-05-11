@@ -12,5 +12,6 @@ app = dash.Dash(
     suppress_callback_exceptions=True,
 )
 
+
 if __name__ == "__main__":
     app.run(debug=True)

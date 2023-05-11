@@ -36,6 +36,12 @@ class MetaStream(object):
         self.stream.clear()
         self.is_update_ready = False
 
+    def delete_df(self):
+        """Delete both stream & dataframe to prepare for new session"""
+        self.stream.clear()
+        self.df_packet_hist = pd.DataFrame(columns=self.df_packet_hist.columns)
+        self.is_update_ready = False
+
     def _move_packets_to_df_packet_hist(self) -> None:
         """Move the raw packet stream (list) to dataframe history"""
         self.df_packet_hist = pd.concat(

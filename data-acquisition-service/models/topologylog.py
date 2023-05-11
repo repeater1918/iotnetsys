@@ -6,10 +6,9 @@ from models.base import BaseLog
 
 class TopologyLog(BaseLog):
     def __init__(self, node: int, log: str, timestamp: int, sessionid: datetime, env_timestamp: datetime, log_fields: list) -> None:
-        super().__init__(timestamp, node, log,  env_timestamp)        
+        super().__init__(timestamp, node, log, sessionid, env_timestamp)        
         self.role = 'sensor'
         self.parent = log_fields[1]
-        self.sessionid = sessionid
         self.type = 'topology'
         if log_fields[2] != None:
             self.node = log_fields[2]

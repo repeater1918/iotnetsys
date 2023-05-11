@@ -5,7 +5,12 @@ from pandas import DataFrame
 
 
 def get_pdr_graph(data = None, is_init=False, node_id=False, is_empty=False):
-
+    """Drawing parent change graph
+    :param data: topology data
+    :param is_init True if graph is first loaded
+    :param node_id: nodeid to view
+    :param is_empty: draw graph with no data
+    """
     if is_init:
         # first initialization of the graph, just need empty placeholder and identify the object in html tree
         graph_id = {"type": "graph-pdr", "page": "node" if node_id else "network"} 

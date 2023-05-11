@@ -23,9 +23,9 @@ class TopologyStream(object):
             self.is_update_ready = True
 
     def flush_stream(self):
+        """Move the new packet to history dataframe"""
         self._move_packets_to_df_packet_hist()
-        self._prepare_data_types()
-                   
+        self._prepare_data_types()                   
 
         self.stream.clear()
         self.is_update_ready = False
@@ -36,6 +36,12 @@ class TopologyStream(object):
         self.stream.clear()
         self.is_update_ready = False
 
+    def delete_df(self):
+        """Delete both stream & dataframe to prepare for new session"""
+        self.stream.clear()
+        self.df_packet_hist = pd.DataFrame(columns=self.df_packet_hist.columns)
+        self.is_update_ready = False
+
     def _move_packets_to_df_packet_hist(self) -> None:
         """Move the raw packet stream (list) to dataframe history"""
         self.df_packet_hist = pd.concat(
@@ -44,6 +50,7 @@ class TopologyStream(object):
         self.df_packet_hist = self.df_packet_hist.sort_values(
             "node", ascending=True
         ).reset_index(drop=True)
+    
 
     def _prepare_data_types(self) -> None:
         """Converts to correct datatypes"""

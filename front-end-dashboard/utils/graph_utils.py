@@ -2,12 +2,12 @@
 import plotly.express as px
 import plotly.graph_objects as go
 from utils.data_connectors import get_node_data, get_network_data, get_topo_data
+from views.graph_pc_node_metric import get_parent_chg_graph
 from views.graph_icmp_packets import get_icmp_graph
 from views.graph_pdr import get_pdr_graph
 from views.graph_queue_loss import get_queueloss_graph
 from views.graph_received_packets import get_receivedpackets_graph
 from views.graph_hop_count import get_hop_cnt_graph
-from views.graph_pc_node_metric import get_parent_chg_graph
 from views.network_topology import default_stylesheet
 import pandas as pd
 import dash
@@ -135,7 +135,6 @@ def update_network_graph(pathname, n_clicks):
 
     #graph for received packets    
     df_received = pd.DataFrame(api_data['received_metric'])   
-            
     if len(api_data['received_metric']) == 0:
         received_graph = get_receivedpackets_graph(is_empty=True)
     else:
@@ -189,6 +188,8 @@ def topology_update(elements, layout, pathname, n_clicks):
     ele = []
     topo_api_data = get_topo_data()
     edge_servers = set()
+    if pathname != '/':
+        return dash.no_update
     for v in topo_api_data:     
         if v['role'] == 'server':
             edge_servers.add(f"{v['node']}")

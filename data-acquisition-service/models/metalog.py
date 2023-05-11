@@ -3,12 +3,11 @@ from datetime import datetime
 from typing import Dict
 
 from models.base import BaseLog
-
+from datetime import timedelta
 
 class MetaLog(BaseLog):
     def __init__(self, timestamp: int, sessionid: datetime, node: int, log: str, env_timestamp: datetime, log_fields: list) -> None:
-        super().__init__(timestamp, node, log, env_timestamp)
-        self.sessionid = sessionid
+        super().__init__(timestamp, node, log, sessionid, env_timestamp)
         self.type = log_fields[4]
         sub_type, sub_type_value = (log_fields[0],log_fields[1])
         sub_type_value2, sub_type_value3 = (log_fields[2], log_fields[3])

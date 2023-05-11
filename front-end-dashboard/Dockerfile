@@ -10,4 +10,4 @@ COPY . .
 
 EXPOSE 80
 
-CMD ["python3", "-m", "gunicorn", "maindash:server", "--bind", "0.0.0.0:80", "--workers", "2"]
+CMD ["python3", "-m", "gunicorn", "app:server", "--bind", "0.0.0.0:80", "--workers", "2"]

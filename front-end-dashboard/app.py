@@ -14,7 +14,7 @@ import flask
 from utils.data_connectors import send_timeframe, send_dlloss, get_network_data, get_node_data
 from utils.graph_utils import get_common_graph
 from dash import MATCH
-from maindash import app 
+from maindash import app, server
 print(f"Running in mode -> {os.environ.get('DEPLOYMENT', 'dev')}")
 
 UPDATE_INTERVAL = 5 * 1000 # check for a data update every 5 seconds

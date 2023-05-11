@@ -11,14 +11,13 @@ pipeline {
     }
 
     stages {
+        
         stage("Print credentials") {
             steps {
                 echo "DOCKERHUB_CREDENTIALS: ${DOCKERHUB_CREDENTIALS}"
             }
         }
-    }
 
-    stages {
         stage('Build Docker images') {
         steps {
             script {

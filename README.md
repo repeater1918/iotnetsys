@@ -1,4 +1,4 @@
-
+[![Build Status](http://ec2-54-66-248-134.ap-southeast-2.compute.amazonaws.com/buildStatus/icon?job=iotnetsys)](http://ec2-54-66-248-134.ap-southeast-2.compute.amazonaws.com/job/iotnetsys/)
 <a name="readme-top"></a>
 
 ### Overview

@@ -1,7 +1,7 @@
 pipeline {
     agent any
       environment {
-    DOCKERHUB_CREDENTIALS = credentials('dockerhub-cred')
+    CRED = credentials('dockerhub-cred')
     DOCKER_REGISTRY_URL = 'hub.docker.com'
     DOCKER_COMPOSE_FILE = 'docker-compose.yaml'
   }
@@ -15,25 +15,11 @@ pipeline {
         stage("Test Docker registry connection") {
             steps {
                 script {
-                    docker.withRegistry('', DOCKERHUB_CREDENTIALS) {
-                        def registry = docker.getRegistry()
-                        echo "Connected to Docker registry: ${registry.url}"
-                    }
+                    sh 'docker-compose build'
+                }
                 }
             }
         }
 
-        stage('Build Docker images') {
-        steps {
-            script {
-            docker.withRegistry(DOCKER_REGISTRY_URL, DOCKERHUB_CREDENTIALS) {
-                def compose = docker.buildComposeFile("Build Docker Images", DOCKER_COMPOSE_FILE, "build")
-                compose.images().each {
-                    dockerImage.push()
-                }
-            }
-            }
-        }
-        }
     }
 }

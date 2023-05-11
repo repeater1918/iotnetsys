@@ -4,6 +4,16 @@ from utils.graphing import bin_label
 
 
 def calculate_dead_loss(df: pd.DataFrame, timeframe: int, timeframe_deadline:int,bins: int, nodeID:int) -> pd.DataFrame:
+    """ Calculate Network level OR Node levle deadline loss based on passed nodeID parameter
+
+    Args:
+        df (pd.DataFrame): Filtered packet data
+        timeframe (int) : user's preferred timeframe (the packet data will be filterred from the beginning to that timeframe)
+        timeframe_deadline (int) : user's preferred deadline timeframe (the packet data will be filtered based on timeframe_deadline parameter)
+        nodeID (int) : if nodeID is -1, the function will calculate network level metric. Otherwise, the function will calculate node level metrics
+    Returns:
+        dict: Metric results at network level or node level according to the nodeID parameter
+    """ 
     # filter down to relevant timeframe
     start_timestamp_limit = df['timestamp'].min()
     end_timestamp_limit = start_timestamp_limit + timeframe

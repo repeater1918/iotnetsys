@@ -70,6 +70,9 @@ node_df = defaultdict(dict) #this is storing dataframe for node level metric in 
 topo_df = {}
 topo_dict = {}
 
+global sensor_node
+sensor_node=[]
+
 # Events (bools) to help prevent race conditions between metric and db watchers
 is_updating_packet = threading.Event()
 is_calculating_packet = threading.Event()
@@ -110,6 +113,7 @@ def packet_metric_scheduler():
     """
     global packet_stream, node_df
     global timeframe_param,timeframe_dls
+    global sensor_node
 
     while True:
         if is_updating_packet.is_set():
@@ -136,16 +140,18 @@ def packet_metric_scheduler():
                 node_df[node]['pdr_metric'] = data
         except Exception as ex:
             print(f'Error in PDR METRIC calc: {ex}')    
-
+        
         try:
+            sensor_node=[]
+            for item in topo_df:
+                if item['role']=='sensor':
+                    sensor_node.append(item['node'])
             # Nwe - to calculate end-to-end delay (network level)
             e2e_metric = calculate_end_to_end_delay(copy.deepcopy(df_all_packets), timeframe=timeframe_param*1000, bins=10,nodeID=-1)
             e2e_dict = e2e_metric.to_dict("records")
             network_df['e2e_metric'] = e2e_dict
             # Nwe - to calculate end-to-end delay (node level)
-            for node in df_all_packets['node'].unique():
-                if node == 1 or node == 2:
-                    continue
+            for node in sensor_node:
                 e2e_node_metric = calculate_end_to_end_delay(copy.deepcopy(df_all_packets), timeframe=timeframe_param*1000, bins=10,nodeID=node)
                 e2e_node_metric_dict = e2e_node_metric.to_dict("records")
                 node_df[node]['e2e_metric'] = e2e_node_metric_dict
@@ -158,9 +164,7 @@ def packet_metric_scheduler():
             deadloss_dict = deadloss_metric.to_dict("records")
             network_df['deadloss_metric'] = deadloss_dict 
             # Nwe - to calculate dead loss (node level)
-            for node in df_all_packets['node'].unique():
-                if node == 1 or node == 2:
-                    continue
+            for node in sensor_node:
                 deadloss_node_metric = calculate_dead_loss(copy.deepcopy(df_all_packets), timeframe=timeframe_param*1000,timeframe_deadline=timeframe_dls,bins=10,nodeID=node)
                 deadloss_node_metric_dict = deadloss_node_metric.to_dict("records")
                 node_df[node]['deadloss_metric'] = deadloss_node_metric_dict
@@ -202,6 +206,7 @@ def meta_metric_scheduler():
 
     global meta_stream
     global timeframe_param,timeframe_dls
+    global sensor_node
 
     while True:
         if is_updating_meta.is_set():
@@ -252,7 +257,7 @@ def meta_metric_scheduler():
             network_df['energy_cons_metric'] = energy_metric_dict
 
             #Step 4 - Calculate metric for specific node
-            for node in range(2,8):
+            for node in sensor_node:
                 energy_node = df_all_meta_packets.loc[df_all_meta_packets['node']==node].copy()
                 energy_cons_node_metrics = calculate_energy_cons_metrics(energy_node)
                 energy_cons_node_metrics_dict = energy_cons_node_metrics.to_dict("records")

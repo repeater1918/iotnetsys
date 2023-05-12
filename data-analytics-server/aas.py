@@ -70,6 +70,7 @@ node_df = defaultdict(dict) #this is storing dataframe for node level metric in 
 topo_df = {}
 topo_dict = {}
 
+#global sensor_nodes without the edge server
 global sensor_node
 sensor_node=[]
 
@@ -249,15 +250,16 @@ def meta_metric_scheduler():
             print(f'Error in QUEUE LOSS METRIC calc: {ex}')
 
         try:    
-            # Step 1 - using all historical packets (df_all_packets) - calculate your metrics and return a dataframe
+            # Step 1 - using all historical packets (df_all_packets) - to calculate energy consumption metrics and return a dataframe
             energy_cons_metric = calculate_energy_cons_metrics(copy.deepcopy(df_all_meta_packets))
-            # Step 2 - when you have the result convert your dataframe to a dictionary so it can be sent as json
+            # Step 2 - Converted results to dataframe to a dictionary so it can be sent as json
             energy_metric_dict = energy_cons_metric.to_dict("records")
-            # Step 3 - pass your dictionary data into the on_packet_data_update to send it to the front-end
+            # Step 3 - Passing dictionary data into the on_packet_data_update to send it to the front-end
             network_df['energy_cons_metric'] = energy_metric_dict
 
             #Step 4 - Calculate metric for specific node
             for node in sensor_node:
+                # to get data related to each node
                 energy_node = df_all_meta_packets.loc[df_all_meta_packets['node']==node].copy()
                 energy_cons_node_metrics = calculate_energy_cons_metrics(energy_node)
                 energy_cons_node_metrics_dict = energy_cons_node_metrics.to_dict("records")

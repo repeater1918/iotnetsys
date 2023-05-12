@@ -71,7 +71,7 @@ topo_df = {}
 topo_dict = {}
 
 global sensor_node
-sensor_node =[]
+sensor_node=[]
 
 # Events (bools) to help prevent race conditions between metric and db watchers
 is_updating_packet = threading.Event()
@@ -142,13 +142,8 @@ def packet_metric_scheduler():
                 node_df[node]['pdr_metric'] = data
         except Exception as ex:
             print(f'Error in PDR METRIC calc: {ex}')    
-
+        
         try:
-            sensor_node = []
-            for item in topo_df:
-                 if item['role'] == 'sensor':
-                      sensor_node.append(item['node'])
-                      
             # Nwe - to calculate end-to-end delay (network level)
             e2e_metric = calculate_end_to_end_delay(copy.deepcopy(df_all_packets), timeframe=timeframe_param*1000, bins=10,nodeID=-1)
             e2e_dict = e2e_metric.to_dict("records")

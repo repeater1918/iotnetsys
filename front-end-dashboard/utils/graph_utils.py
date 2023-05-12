@@ -62,7 +62,7 @@ def get_common_graph(api_data, nodeid=None):
         graph_duty_cycle = go.Figure(
                 go.Indicator(
                     mode="gauge+number+delta",
-                    value=df_energy.loc[0,"energy_cons"],
+                    value= 100 - df_energy.loc[0,"energy_cons"],
                     
                     domain={"x": [0, 1], "y": [0, 1]},
                     delta={"reference": 100},

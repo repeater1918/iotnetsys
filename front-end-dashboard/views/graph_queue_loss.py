@@ -3,10 +3,9 @@ from dash import dcc, html
 from pandas import DataFrame
 import dash_bootstrap_templates as dbt
 
-dbt.load_figure_template("DARKLY")
 
 def get_queueloss_graph(data = None, is_init=False, node_id=False, is_empty=False):
-    """Drawing parent change graph
+    """Drawing queue loss graph
     :param data: topology data
     :param is_init True if graph is first loaded
     :param node_id: nodeid to view
@@ -33,6 +32,7 @@ def get_queueloss_graph(data = None, is_init=False, node_id=False, is_empty=Fals
     
     if node_id:
         #  data is available and a node type graph is required, render graph for a node view
+        data.loc[data['sub_type_value'] == 0, 'sub_type_value'] = f'    Node {node_id} has no queue loss'
         queueloss_graph = px.bar(
             data,
             x="env_timestamp",
@@ -48,7 +48,6 @@ def get_queueloss_graph(data = None, is_init=False, node_id=False, is_empty=Fals
             y="sub_type_value",
             labels={"node": "Node ID", "sub_type_value": "Number of dropped packets"},
         )
-    
     queueloss_graph = _style_graph(queueloss_graph, data)
     return queueloss_graph
 
@@ -57,7 +56,9 @@ def _get_place_holder():
     return fig
 
 def _style_graph(fig, data: DataFrame = None):
-    fig.update_layout({"plot_bgcolor": "#222", "paper_bgcolor": "#222"})
+    fig.update_layout({"plot_bgcolor": "#222", "paper_bgcolor": "#222",})
     if data is not None:
-        fig.update_traces(marker_color="blue")
+        #fig.update_traces(marker_color="#DB58B4")
+        fig.update_traces(marker_color="red")
+        
     return fig

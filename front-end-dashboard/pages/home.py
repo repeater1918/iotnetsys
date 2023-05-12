@@ -32,12 +32,12 @@ layout = html.Div(
         )),
         dbc.Row(
             [
-                dbc.Col(get_pdr_graph(is_init=True), md=6, style={"margin-top": "16px"}),
-                dbc.Col(get_receivedpackets_graph(is_init=True), md=6, style={"margin-top": "16px"}),
-                dbc.Col(get_e2e_graph(is_init=True), md=6, style={"margin-top": "16px"}),
-                dbc.Col(get_deadloss_graph(is_init=True), md=6, style={"margin-top": "16px"}),
-                dbc.Col(get_icmp_graph(is_init=True), md=6, style={"margin-top": "16px"}),
-                dbc.Col(get_queueloss_graph(is_init=True), md=6, style={"margin-top": "16px"}),
+                dbc.Col(get_pdr_graph(is_init=True), md=4, style={"margin-top": "16px"}),
+                dbc.Col(get_receivedpackets_graph(is_init=True), md=4, style={"margin-top": "16px"}),
+                dbc.Col(get_e2e_graph(is_init=True), md=4, style={"margin-top": "16px"}),
+                dbc.Col(get_icmp_graph(is_init=True), md=4, style={"margin-top": "16px"}),
+                dbc.Col(get_deadloss_graph(is_init=True), md=4, style={"margin-top": "16px"}),
+                dbc.Col(get_queueloss_graph(is_init=True), md=4, style={"margin-top": "16px"}),
                 
 
             ]),

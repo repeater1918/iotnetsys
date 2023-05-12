@@ -60,5 +60,6 @@ def _get_place_holder():
 
 def _style_graph(fig, data: DataFrame = None):
     fig.update_layout({"plot_bgcolor": "#222", "paper_bgcolor": "#222"})
+    fig.update_traces(line_color="#7A1BF6")
 
     return fig

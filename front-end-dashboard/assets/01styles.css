@@ -42,7 +42,7 @@ html, body {
 
 .list-group-item.typology-lvl1 {
     font-size: 1.05rem;
-    color: orange;
+    color: navajowhite;
     font-weight: bold;
 }
 
@@ -62,6 +62,7 @@ html, body {
     margin-top: 32px;
     color: orange;
     font-weight: bold ;
+    text-transform: uppercase;
 }
 
 .form-select {
@@ -73,6 +74,7 @@ html, body {
     margin: 1px 0px;
     padding: 9px 32px;
     font-size: 1.1rem;
+    text-transform: uppercase;
     font-weight: bold;
     color: orange;
     background-color: #303030;
@@ -82,8 +84,9 @@ html, body {
 
 .graph-title {
     text-align: center;
-    color: orange;
+    color: navajowhite;
     font-weight: bold ;
+    text-transform: uppercase;
     min-height: 32px;
     line-height: 32px;
     background-color: #303030;

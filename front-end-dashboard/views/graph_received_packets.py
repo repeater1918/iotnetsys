@@ -3,29 +3,23 @@ from dash import dcc, html
 from pandas import DataFrame
 import dash_bootstrap_templates as dbt
 
-dbt.load_figure_template("DARKLY")
-
-def get_receivedpackets_graph(data = None, is_init=False, node_id=False, is_empty=False):
-    """Drawing parent change graph
+def get_receivedpackets_graph(data = None, is_init=False, is_empty=False):
+    """Drawing number of received packet graph
     :param data: topology data
     :param is_init True if graph is first loaded
-    :param node_id: nodeid to view
     :param is_empty: draw graph with no data
     """
     if is_init:
         # first initialization of the graph, just need empty placeholder and identify the object in html tree
-        graph_id = {"type": "graph-receivedpackets", "page": "node" if node_id else "network"} 
-        #graph_id = "graph-queueloss"
-        title = f"Number of received packets - Node: {node_id}" if node_id else "Number of received packets"
-        #title = "Queue Loss"
+        graph_id = {"type": "graph-receivedpackets", "page": "network"} 
+        title = "Number of received packets"
         receivedpackets_graph = _get_place_holder()
 
         return html.Div(
             children=[
                 html.Div(title, className="graph-title"),
                 dcc.Graph(id=graph_id, figure=receivedpackets_graph),
-            ]
-        )
+            ])
     
     if is_empty:
         #  update has occurred but not data, return a empty placeholder
@@ -48,4 +42,5 @@ def _get_place_holder():
 
 def _style_graph(fig, data: DataFrame = None):
     fig.update_layout({"plot_bgcolor": "#222", "paper_bgcolor": "#222"})
+    fig.update_traces(line_color = '#1BF646')
     return fig

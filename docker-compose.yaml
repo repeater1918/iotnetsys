@@ -6,16 +6,24 @@ services:
     build:
       context: ./front-end-dashboard
       dockerfile: Dockerfile
-    env_file:
-      - .envs/mongodb.env
+    environment:
+      - DB_HOST=${DB_HOST}
+      - DB_PORT=${DB_PORT}
+      - DB_NAME=${DB_NAME}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
     image: repeater918/iontnetsys-aap
     depends_on:
       - analytics-api-srv
 
   analytics-api-srv:
     container_name: aas
-    env_file:
-      - .envs/mongodb.env
+    environment:
+      - DB_HOST=${DB_HOST}
+      - DB_PORT=${DB_PORT}
+      - DB_NAME=${DB_NAME}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
     build:
       context: ./data-analytics-server
       dockerfile: Dockerfile

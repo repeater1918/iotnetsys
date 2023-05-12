@@ -46,6 +46,7 @@ app.layout = html.Div(
             children=[
                 dbc.Row(dbc.Col(html.Div(children=dash.page_container)))
             ],
+            style={"padding-right": "16px", "padding-left": "16px"},
         ),
     ]
 )

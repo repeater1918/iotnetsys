@@ -10,14 +10,14 @@ from views.graph_icmp_packets import get_icmp_graph
 from views.graph_pdr import get_pdr_graph
 from views.graph_queue_loss import get_queueloss_graph
 from views.graph_received_packets import get_receivedpackets_graph
+from views.graph_e2e import get_e2e_graph
+from views.graph_deadloss import get_deadloss_graph
 from components.navigation import nav_drawer, top_page_heading
 
 
 dash.register_page(__name__, path="/")
 
 graph_duty_cycle = dcc.Graph(id={"type": "graph-duty-cycle", "page": "network"})
-graph_e2e_metric = dcc.Graph(id={"type": "graph-e2e", "page": "network"}, figure=px.bar(title="Average End to End Delay"))
-graph_deadloss_metric = dcc.Graph(id={"type": "graph-deadloss", "page": "network"}, figure=px.bar(title="Deadline Loss Percentage"))
 
 layout = html.Div(
     className="wrapper",
@@ -34,8 +34,8 @@ layout = html.Div(
             [
                 dbc.Col(get_pdr_graph(is_init=True), md=6, style={"margin-top": "16px"}),
                 dbc.Col(get_receivedpackets_graph(is_init=True), md=6, style={"margin-top": "16px"}),
-                dbc.Col(graph_e2e_metric, md=6, style={"margin-top": "16px"}),
-                dbc.Col(graph_deadloss_metric, md=6, style={"margin-top": "16px"}),
+                dbc.Col(get_e2e_graph(is_init=True), md=6, style={"margin-top": "16px"}),
+                dbc.Col(get_deadloss_graph(is_init=True), md=6, style={"margin-top": "16px"}),
                 dbc.Col(get_icmp_graph(is_init=True), md=6, style={"margin-top": "16px"}),
                 dbc.Col(get_queueloss_graph(is_init=True), md=6, style={"margin-top": "16px"}),
                 

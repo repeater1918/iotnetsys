@@ -8,6 +8,8 @@ from views.graph_pdr import get_pdr_graph
 from views.graph_queue_loss import get_queueloss_graph
 from views.graph_received_packets import get_receivedpackets_graph
 from views.graph_hop_count import get_hop_cnt_graph
+from views.graph_e2e import get_e2e_graph
+from views.graph_deadloss import get_deadloss_graph
 from views.network_topology import default_stylesheet
 import pandas as pd
 import dash
@@ -37,39 +39,22 @@ def get_common_graph(api_data, nodeid=None):
         queueloss_graph = get_queueloss_graph(is_empty=True, node_id=nodeid)
     else:
         queueloss_graph = get_queueloss_graph(df_queueloss, node_id=nodeid)    
-  
-    # Nwe - for end to end delay
+
+    # for end to end delay
     df_e2e = pd.DataFrame(api_data['e2e_metric'])
     if len(api_data['e2e_metric']) == 0:
-        e2e_graph = px.line(title="Average End to End Delay")
-    else:
-        e2e_graph = px.line(
-            df_e2e,
-            x="env_timestamp",
-            y="average_delay",
-            color_discrete_sequence=["red"],
-            title="Average End to End Delay",
-            labels={"env_timestamp": "Time Invervals", "average_delay": "Milli-Seconds"},
-        )
-        #e2e_graph.update_traces(marker_color="green")
-        e2e_graph.update_traces(line_color='blue')
+        e2e_graph = get_e2e_graph(is_empty=True, node_id=nodeid)
+    else:  
+        e2e_graph = get_e2e_graph(df_e2e, node_id=nodeid)
 
-    # Nwe - for deadloss
+    # for deadline loss
     df_deadloss = pd.DataFrame(api_data['deadloss_metric'])
     if len(api_data['deadloss_metric']) == 0:
-        deadloss_graph = px.line(title="Deadline Loss Percentage")
-    else:
-        deadloss_graph = px.line(
-            df_deadloss,
-            x="env_timestamp",
-            y="deadloss_percent",
-            title="Deadline Loss Percentage",
-            labels={"env_timestamp": "Time Invervals", "deadloss_percent": "Deadline Loss Packets %"},
-            
-        )
-        #deadloss_graph.update_traces(marker_color="green")
-        deadloss_graph.update_traces(line_color='blue')
-   
+        deadloss_graph = get_deadloss_graph(is_empty=True, node_id=nodeid)
+    else:  
+        deadloss_graph = get_deadloss_graph(df_deadloss, node_id=nodeid)
+        
+    # for duty
     df_energy = pd.DataFrame(api_data['energy_cons_metric'])
     if len(api_data['energy_cons_metric']) == 0:
         graph_duty_cycle = px.bar(title="Energy Consumption")

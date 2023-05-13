@@ -9,7 +9,7 @@ pipeline {
         stage('Checkout') {
             agent { label 'linux-docker' }
             steps {
-                checkout scmGit(branches: [[name: '*/development']], userRemoteConfigs: [[credentialsId: 'github-syd', url: 'git@github.sydney.edu.au:jomc7031/CS44-2-IOTNetSys.git']])
+                checkout scmGit(branches: [[name: '*/main']], userRemoteConfigs: [[credentialsId: 'github-syd', url: 'git@github.sydney.edu.au:jomc7031/CS44-2-IOTNetSys.git']])
                 sh 'ls'
             }
         }

@@ -56,7 +56,8 @@ def _get_place_holder():
     return fig
 
 def _style_graph(fig):
-    fig.update_traces(marker_color="green")
+    fig.update_traces(marker_color="#F48308")
+    #fig.update_traces(marker_color="#1763F4")
     fig.update_xaxes(type="category")
     fig.update_layout({"plot_bgcolor": "#222", "paper_bgcolor": "#222"})
     return fig

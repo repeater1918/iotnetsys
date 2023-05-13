@@ -14,6 +14,7 @@ def calculate_icmp_metrics(df: pd.DataFrame) -> Tuple[dict, dict]:
     """
     net_icmp_metrics = df.loc[df['sub_type'] == 'icmp'].drop('_id', axis=1).copy()
     net_icmp_metrics['env_timestamp'] = net_icmp_metrics['env_timestamp'].dt.strftime("%H:%M:%S").astype(str) 
+    net_icmp_metrics = net_icmp_metrics.sort_values(by='node', ascending=True)
     node_icmp_metrics = _calculate_node_metrics(net_icmp_metrics)
     return net_icmp_metrics.to_dict('records'), node_icmp_metrics
 

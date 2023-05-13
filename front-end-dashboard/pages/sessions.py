@@ -4,7 +4,7 @@ import dash_bootstrap_components as dbc
 from datetime import datetime
 from utils.data_connectors import get_session_data, send_sessionid
 import pandas as pd
-import requests
+from datetime import datetime,timedelta
 
 dash.register_page(__name__, path='/sessionlist')
 
@@ -62,8 +62,9 @@ def layout():
         [Output('session-datatable', 'columns'),
           Output('session-datatable', 'data'),],
         Input('url', 'pathname'),
+        State("usr-tz", "children")
 )
-def update_session_table(pathname):
+def update_session_table(pathname, usrtz):
     """Update session id table """
     col = []
     data = None
@@ -72,7 +73,8 @@ def update_session_table(pathname):
         if len(res) > 0:
             df = pd.DataFrame(res) 
             df.rename(columns={'sessionid': 'Session ID'}, inplace=True)
-            df['Session ID'] = pd.to_datetime(df['Session ID'])
+            df['Session ID'] = pd.to_datetime(df['Session ID']) 
+            df['Session ID']= df['Session ID']- timedelta(minutes=usrtz)
             df['Date'] = df['Session ID'].dt.strftime('%d-%m-%Y')
             df = df[['Date', 'Session ID']]
             col = [{"name": i, "id": i, "type": "datetime" } for i in df.columns]
@@ -87,8 +89,9 @@ def update_session_table(pathname):
     Input('session-datatable', "derived_virtual_data"),
     Input('session-datatable', "derived_virtual_selected_rows"),
     State('usr_session_data', 'data'),
+    State("usr-tz", "children")
     )
-def update_browser_session(rows, derived_virtual_selected_rows, data ):  
+def update_browser_session(rows, derived_virtual_selected_rows, data, usrtz):  
     """Update session id to browser storage"""
     val = None
     div_output = ''
@@ -105,7 +108,9 @@ def update_browser_session(rows, derived_virtual_selected_rows, data ):
         hh_mm = dt.strftime("%H:%M") 
         div_output = f'You selected a session on {day} at {hh_mm}'
         data = data or {'sessionid': ''}
-        data['sessionid'] = val
+        #Convert again to UTC0 to standardise timezone
+        dt = dt + timedelta(minutes=usrtz)
+        data['sessionid'] = datetime.isoformat(dt)
     print(f"Data {data} has been added to user browser ")
     return div_output, data
 

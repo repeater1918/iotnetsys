@@ -55,7 +55,7 @@ def get_common_graph(api_data, nodeid=None):
         deadloss_graph = get_deadloss_graph(df_deadloss, node_id=nodeid)
         
     # for duty
-    df_energy = pd.DataFrame(api_data['energy_cons_metric'])
+    df_energy = pd.DataFrame(api_data['energy_cons_metric'], index=[0])    
     if len(api_data['energy_cons_metric']) == 0:
         graph_duty_cycle = px.bar(title="Energy Consumption")
     else:
@@ -91,6 +91,7 @@ Output({"type":"graph-pdr", "page": MATCH}, "figure"),
 Output({"type":"graph-icmp", "page": MATCH}, "figure"),
 [Input('url', 'pathname'), Input('refresh-dash', 'n_clicks')])
 def update_common_graphs(pathname, n_clicks):
+    """Callback to update common graphs in both network & node"""
     #print("Common graph is updating ")
     
     if pathname.split('/')[1] == 'node_view':
@@ -112,6 +113,7 @@ def update_common_graphs(pathname, n_clicks):
 @app.callback(Output({"type": "graph-receivedpackets", "page": "network"}, "figure"),
 [Input('url', 'pathname'), Input('refresh-dash', 'n_clicks')])
 def update_network_graph(pathname, n_clicks):
+    """Callback to update graphs specific to network view"""
     #print("Network specific graph is updating")
     if pathname != '/':
         return dash.no_update
@@ -132,14 +134,13 @@ def update_network_graph(pathname, n_clicks):
 Output({"type":"graph-pc", "page": "node"}, "figure"),
 [Input('url', 'pathname'), Input('refresh-dash', 'n_clicks')])
 def update_node_graph(pathname, n_clicks):
-    
+    """Callback to update graphs specific to node view"""
+
     if pathname.split('/')[1] != 'node_view':
         return dash.no_update
 
     nodeid = int(pathname.split('/')[-1])
-
     api_data  = get_node_data(nodeid, 'pc_metric')    
-
     topo_api_data = get_topo_data()
 
     df_topo = pd.DataFrame(topo_api_data)
@@ -203,7 +204,7 @@ def topology_update(elements, layout, pathname, n_clicks):
                      Input('topology-graph', 'layout')],
                     [State('topo-toast', "is_open")])
 def displayTapNodeData(data, layout, is_open):
-
+        """Callback to display node info on selected"""
         if data:
             #Node data[0]['id'] selected
             selected_node = data[0]['id']

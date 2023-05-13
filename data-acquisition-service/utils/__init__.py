@@ -1,0 +1,1 @@
+from utils.db_resolver import get_collection_name, delete_all_collections

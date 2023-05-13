@@ -36,12 +36,20 @@ class MetaStream(object):
         self.stream.clear()
         self.is_update_ready = False
 
+    def delete_df(self):
+        """Delete both stream & dataframe to prepare for new session"""
+        self.stream.clear()
+        self.df_packet_hist = pd.DataFrame(columns=self.df_packet_hist.columns)
+        self.is_update_ready = False
+
     def _move_packets_to_df_packet_hist(self) -> None:
         """Move the raw packet stream (list) to dataframe history"""
-        self.df_packet_hist = self.df_packet_hist.append(self.stream).reset_index(
-            drop=True
-        )
+        self.df_packet_hist = pd.concat(
+            [pd.DataFrame(self.stream), self.df_packet_hist]
+        ).reset_index(drop=True)
+        
 
     def _prepare_data_types(self) -> None:
         """Converts to correct datatypes"""
         self.df_packet_hist["timestamp"] = self.df_packet_hist["timestamp"].astype(int)
+        self.df_packet_hist = self.df_packet_hist.fillna(value={'sub_type_value2': 0, 'sub_type_value3': 0})

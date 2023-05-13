@@ -6,6 +6,8 @@ __pycache__/
 # C extensions
 *.so
 
+*.csv
+
 # Distribution / packaging
 .Python
 build/
@@ -159,4 +161,4 @@ cython_debug/
 /data
 
 # Env folders
-/.envs
+.envs

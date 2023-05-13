@@ -13,6 +13,9 @@ class Database:
 
     def get_collection(self, collection_name):
         return self.database[collection_name]
+    
+    def list_collection_names(self):
+        return self.database.list_collection_names()
 
     def insert_one(self, collection_name, document):
         collection = self.get_collection(collection_name)

@@ -2,10 +2,10 @@ import pandas as pd
 from typing import Union, List, Dict
 
 
-class PacketStream(object):
+class TopologyStream(object):
     # stores all historical packets
     df_packet_hist: pd.DataFrame = pd.DataFrame(
-        columns=["timestamp", "node", "log", "direction", "packet_id", "type"]
+        columns=["node", "parent", "role"]
     )
     # buffer for new packets - added to df_packet_hist periodically
     stream: List[Dict] = []
@@ -18,14 +18,14 @@ class PacketStream(object):
     def append_stream(self, documents: List[Dict]):
         """Adds  new packets to a raw stream and checks if enough are in the stream to flag update"""
         self.stream = self.stream + documents
-
         # if the stream has accumulated enough packets, flag update is ready
         if len(self.stream) > self.packet_update_limit:
             self.is_update_ready = True
 
     def flush_stream(self):
+        """Move the new packet to history dataframe"""
         self._move_packets_to_df_packet_hist()
-        self._prepare_data_types()
+        self._prepare_data_types()                   
 
         self.stream.clear()
         self.is_update_ready = False
@@ -45,13 +45,13 @@ class PacketStream(object):
     def _move_packets_to_df_packet_hist(self) -> None:
         """Move the raw packet stream (list) to dataframe history"""
         self.df_packet_hist = pd.concat(
-            [pd.DataFrame(self.stream), self.df_packet_hist]
+            [pd.DataFrame(self.stream),self.df_packet_hist]
         )
         self.df_packet_hist = self.df_packet_hist.sort_values(
-            "timestamp", ascending=True
+            "node", ascending=True
         ).reset_index(drop=True)
+    
 
     def _prepare_data_types(self) -> None:
-        """Converts to correct datatypes and ids"""
-        self.df_packet_hist["timestamp"] = self.df_packet_hist["timestamp"].astype(int)
-        self.df_packet_hist['unique_id'] = self.df_packet_hist['timestamp'].astype(str).str[:2] + self.df_packet_hist['packet_id']
+        """Converts to correct datatypes"""
+        self.df_packet_hist["node"] = self.df_packet_hist["node"].astype(int)

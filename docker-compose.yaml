@@ -1,0 +1,41 @@
+version: "3.3"
+
+services:
+  front-end-dashboard:
+    container_name: app
+    build:
+      context: ./front-end-dashboard
+      dockerfile: Dockerfile
+    environment:
+      - MONGO_USR=${MONGO_USR}
+      - MONGO_PWD=${MONGO_PWD}
+      - MONGO_CLSTR=${MONGO_CLSTR}
+      - DEPLOYMENT=${DEPLOYMENT}
+      - AAS_URI=${AAS_URI}
+    image: repeater918/iontnetsys-aap
+    depends_on:
+      - analytics-api-srv
+
+  analytics-api-srv:
+    container_name: aas
+    environment:
+      - MONGO_USR=${MONGO_USR}
+      - MONGO_PWD=${MONGO_PWD}
+      - MONGO_CLSTR=${MONGO_CLSTR}
+      - DEPLOYMENT=${DEPLOYMENT}
+      - AAS_URI=${AAS_URI}
+    build:
+      context: ./data-analytics-server
+      dockerfile: Dockerfile
+    image: repeater918/iontnetsys-aas
+
+  nginx:
+    build: ./
+    container_name: ngx
+    image: repeater918/iontnetsys-proxy
+    ports:
+      - "80:80"
+      - "443:443"
+    depends_on:
+      - front-end-dashboard
+      - analytics-api-srv

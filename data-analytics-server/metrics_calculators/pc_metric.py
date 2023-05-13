@@ -3,7 +3,13 @@ import pandas as pd
 
 def calculate_parent_change_ntwk_metrics(df: pd.DataFrame) -> dict:
     """
-    For the given timeframe, return an int showing the total number of parent changes.
+    Calculates the total parent changes over the entire network.
+
+    Args:
+        df (pd.DataFrame): a dataframe containing filtered packet information
+
+    Returns:
+        dict: a dict containing the total number of parent changes over the network
     """
     net_pc_metrics = df.loc[df['sub_type'] == 'parent'].drop('_id', axis=1).copy()
     net_pc_metrics['env_timestamp'] = net_pc_metrics['env_timestamp'].dt.strftime("%H:%M:%S").astype(str) 
@@ -15,7 +21,13 @@ def calculate_parent_change_ntwk_metrics(df: pd.DataFrame) -> dict:
 
 def _calculate_parent_change_node_metrics(df: pd.DataFrame) -> dict:
     """
-    For the given timeframe, return a dataframe showing the total number of parent changes per node.
+    Calculates the total parent changes for each node.
+
+    Args:
+        df (pd.DataFrame): a dataframe containing filtered packet information
+
+    Returns:
+        dict: a dict mapping the the total number of parent changes to a node ID
     """
     result = {}
     for node in df['node'].unique():

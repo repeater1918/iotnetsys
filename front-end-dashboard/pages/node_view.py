@@ -18,7 +18,6 @@ dash.register_page(__name__, path_template='/node_view/<nodeid>')
 def layout(nodeid):
     
     graph_duty_cycle = dcc.Graph(id={"type": "graph-duty-cycle", "page": "node"} )
-    graph_pc_node_metric = dcc.Graph(id={"type": "graph-pc", "page": "node"}, figure = px.bar(title="Parent Changes per Node"))
 
     return html.Div(
     className="wrapper",

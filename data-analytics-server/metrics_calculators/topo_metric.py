@@ -3,6 +3,15 @@ import numpy as np
 
 
 def topology_df_gen(df: pd.DataFrame):
+    """
+    Generates a IoT network topology dataframe.
+
+    Args:
+        df (pd.DataFrame): a dataframe containing filtered packet information
+
+    Returns:
+        pd.DataFrame: a topology dataframe containing node, role, parent and hop count information
+    """
     df = df[['node','role','parent']]
     df = df.fillna(value={'role':'sensor'})
 
@@ -25,6 +34,17 @@ def topology_df_gen(df: pd.DataFrame):
     return df
 
 def _find_path_to_root(df, nodeid, server_node):
+    """
+    Finds the path and hop count from a node to the root node.
+
+    Args:
+        df: a dataframe containing filtered packet information
+        nodeid: node ID
+        server_node: server node ID
+
+    Returns:
+        Tuple[List[Any], int]: the path from the node to the root node, the hop count from the node to the root node
+    """
     # find the server node by looking for the node with no parent
     #server_node = df.loc[df['role'] == 'server', 'node'].values[0]
     # initialize an empty list to store the path

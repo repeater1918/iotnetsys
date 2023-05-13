@@ -132,6 +132,7 @@ def packet_metric_scheduler():
 
         # This dataframe represents all historical packets
         df_all_packets = packet_stream.flush_stream().copy(deep=True)
+        df_all_packets.to_csv(path_or_buf='packetdata.csv', sep='|', index = False)
 
         """ ########### Place calcs below here ########### """
         try:

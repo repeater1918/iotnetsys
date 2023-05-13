@@ -61,9 +61,10 @@ pipeline {
             agent { label 'linux-docker' }
             steps {
                     sshagent(['iotnetsys']) {
-                        sh 'scp -o StrictHostKeyChecking=no ./docker-compose.env.yaml ec2-user@ec2-54-252-240-175.ap-southeast-2.compute.amazonaws.com:/home/ec2-user/app/docker-compose.yaml'
-                        sh 'ssh -tt ec2-user@ec2-54-252-240-175.ap-southeast-2.compute.amazonaws.com -o StrictHostKeyChecking=no "echo $DOCKERHUB_PSW | sudo docker login -u $DOCKERHUB_USR --password-stdin; cd /home/ec2-user/app/; sudo docker-compose pull; exit"'
-                        sh 'ssh -tt ec2-user@ec2-54-252-240-175.ap-southeast-2.compute.amazonaws.com -o StrictHostKeyChecking=no "cd /home/ec2-user/app/; sudo docker-compose up -d --no-build; exit"'
+                        sh 'scp -o StrictHostKeyChecking=no ./docker-compose.env.yaml ec2-user@54.153.250.213:/home/ec2-user/app/docker-compose.yaml'
+                        sh "ssh -tt ec2-user@54.153.250.213 -o StrictHostKeyChecking=no \"cd /home/ec2-user/app/; sed -i -e '/build/d' -e '/context/d' -e '/dockerfile/d' docker-compose.yaml; sudo docker-compose down; exit\""
+                        sh 'ssh -tt ec2-user@54.153.250.213 -o StrictHostKeyChecking=no "echo $DOCKERHUB_PSW | sudo docker login -u $DOCKERHUB_USR --password-stdin; cd /home/ec2-user/app/; sudo docker-compose pull; exit"'
+                        sh 'ssh -tt ec2-user@54.153.250.213 -o StrictHostKeyChecking=no "cd /home/ec2-user/app/; sudo docker-compose up -d --no-build; exit"'
                     }
             }
         }

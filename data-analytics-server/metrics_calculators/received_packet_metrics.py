@@ -43,6 +43,20 @@ def get_packets_in_timeframe(df: pd.DataFrame, timeframe: int) -> pd.DataFrame:
 
 #preparing bins 
 def prepare_bins(df: pd.DataFrame, bins: int, bin_size: int) -> pd.DataFrame:
+    """
+    Assigns bins to the dataframe based on packet timestamps.
+
+    Args:
+        df (pd.DataFrame): a dataframe containing filtered packet information
+        bins (int): number of bins in which to divide the timestamp
+        bin_size (int): the size of each bin
+
+    Raises:
+        Exception: raised if the dataframe is empty
+
+    Returns:
+        pd.DataFrame: a dataframe with the added 'bins' column
+    """
     boundaries = []
     for i in range(bins + 1):
         boundaries.append((df['timestamp'].min() - 1) + (i * bin_size))

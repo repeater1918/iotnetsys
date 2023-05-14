@@ -138,7 +138,6 @@ def update_topology_dict(log, log_type):
 
     return res
 
-#delete_all_collections(client)
 
 while not proc.poll():
     time.sleep(0)  # FIXME - delays input response by 1 second for readability

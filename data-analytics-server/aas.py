@@ -22,7 +22,7 @@ from collections import defaultdict
 from typing import Union
 from datetime import datetime
 from database.mongodb import Database
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from metrics_calculators import (calculate_dead_loss,
                                  calculate_end_to_end_delay,
                                  calculate_energy_cons_metrics,
@@ -70,10 +70,6 @@ node_df = defaultdict(dict) #this is storing dataframe for node level metric in 
 topo_df = {}
 topo_dict = {}
 
-#global sensor_nodes without the edge server
-global sensor_node
-sensor_node=[]
-
 # Events (bools) to help prevent race conditions between metric and db watchers
 is_updating_packet = threading.Event()
 is_calculating_packet = threading.Event()
@@ -114,7 +110,6 @@ def packet_metric_scheduler():
     """
     global packet_stream, node_df
     global timeframe_param,timeframe_dls
-    global sensor_node
 
     while True:
         if is_updating_packet.is_set():
@@ -132,6 +127,7 @@ def packet_metric_scheduler():
 
         # This dataframe represents all historical packets
         df_all_packets = packet_stream.flush_stream().copy(deep=True)
+        df_all_packets.to_csv(path_or_buf='packetdata.csv', sep='|', index = False)
 
         """ ########### Place calcs below here ########### """
         try:
@@ -143,32 +139,26 @@ def packet_metric_scheduler():
             print(f'Error in PDR METRIC calc: {ex}')    
         
         try:
-            sensor_node=[]
-            for item in topo_df:
-                if item['role']=='sensor':
-                    sensor_node.append(item['node'])
             # Nwe - to calculate end-to-end delay (network level)
-            e2e_metric = calculate_end_to_end_delay(copy.deepcopy(df_all_packets), timeframe=timeframe_param*1000, bins=10,nodeID=-1)
-            e2e_dict = e2e_metric.to_dict("records")
-            network_df['e2e_metric'] = e2e_dict
+            e2e_metric, e2e_node_metric = calculate_end_to_end_delay(copy.deepcopy(df_all_packets), timeframe=timeframe_param*1000, bins=10)
+            network_df['e2e_metric'] = e2e_metric
             # Nwe - to calculate end-to-end delay (node level)
-            for node in sensor_node:
-                e2e_node_metric = calculate_end_to_end_delay(copy.deepcopy(df_all_packets), timeframe=timeframe_param*1000, bins=10,nodeID=node)
-                e2e_node_metric_dict = e2e_node_metric.to_dict("records")
-                node_df[node]['e2e_metric'] = e2e_node_metric_dict
+            for node,data in e2e_node_metric.items():
+                # e2e_node_metric = calculate_end_to_end_delay(copy.deepcopy(df_all_packets), timeframe=timeframe_param*1000, bins=10,nodeID=node)
+                # e2e_node_metric_dict = e2e_node_metric.to_dict("records")
+                node_df[node]['e2e_metric'] = data
         except Exception as ex:
             print(f'Error in E2E METRIC calc: {ex}')        
 
         try:
             # Nwe - to calculate dead loss (network level)
-            deadloss_metric = calculate_dead_loss(copy.deepcopy(df_all_packets), timeframe=timeframe_param*1000, timeframe_deadline=timeframe_dls, bins=10,nodeID=-1)
-            deadloss_dict = deadloss_metric.to_dict("records")
-            network_df['deadloss_metric'] = deadloss_dict 
+            deadloss_metric, dloss_node_metric = calculate_dead_loss(copy.deepcopy(df_all_packets), timeframe=timeframe_param*1000, timeframe_deadline=timeframe_dls, bins=10)
+            network_df['deadloss_metric'] = deadloss_metric
             # Nwe - to calculate dead loss (node level)
-            for node in sensor_node:
-                deadloss_node_metric = calculate_dead_loss(copy.deepcopy(df_all_packets), timeframe=timeframe_param*1000,timeframe_deadline=timeframe_dls,bins=10,nodeID=node)
-                deadloss_node_metric_dict = deadloss_node_metric.to_dict("records")
-                node_df[node]['deadloss_metric'] = deadloss_node_metric_dict
+            for node, data in dloss_node_metric.items():
+                # deadloss_node_metric = calculate_dead_loss(copy.deepcopy(df_all_packets), timeframe=timeframe_param*1000,timeframe_deadline=timeframe_dls,bins=10,nodeID=node)
+                # deadloss_node_metric_dict = deadloss_node_metric.to_dict("records")
+                node_df[node]['deadloss_metric'] = data
         except Exception as ex:
             print(f'Error in DEADLINE LOSS METRIC calc: {ex}')        
 
@@ -207,7 +197,7 @@ def meta_metric_scheduler():
 
     global meta_stream
     global timeframe_param,timeframe_dls
-    global sensor_node
+
 
     while True:
         if is_updating_meta.is_set():
@@ -251,19 +241,14 @@ def meta_metric_scheduler():
 
         try:    
             # Step 1 - using all historical packets (df_all_packets) - to calculate energy consumption metrics and return a dataframe
-            energy_cons_metric = calculate_energy_cons_metrics(copy.deepcopy(df_all_meta_packets))
-            # Step 2 - Converted results to dataframe to a dictionary so it can be sent as json
-            energy_metric_dict = energy_cons_metric.to_dict("records")
+            energy_cons_metric, node_energy_cons = calculate_energy_cons_metrics(copy.deepcopy(df_all_meta_packets))
             # Step 3 - Passing dictionary data into the on_packet_data_update to send it to the front-end
-            network_df['energy_cons_metric'] = energy_metric_dict
-
+            network_df['energy_cons_metric'] = energy_cons_metric
+            for node, data in node_energy_cons.items():
+                node_df[node]['energy_cons_metric'] = data
+            
             #Step 4 - Calculate metric for specific node
-            for node in sensor_node:
-                # to get data related to each node
-                energy_node = df_all_meta_packets.loc[df_all_meta_packets['node']==node].copy()
-                energy_cons_node_metrics = calculate_energy_cons_metrics(energy_node)
-                energy_cons_node_metrics_dict = energy_cons_node_metrics.to_dict("records")
-                node_df[node]['energy_cons_metric'] = energy_cons_node_metrics_dict 
+           
         except Exception as ex:
             print(f'Error in ENERGY CONS METRIC calc: {ex}')
 
@@ -288,9 +273,16 @@ def meta_metric_scheduler():
         time.sleep(5) 
 
 def topology_event_scheduler():
-     
-     global topo_df, topo_dict,timeframe_param,timeframe_dls, topo_dict
-     while True:
+    """
+    Function runs periodically and checks if metric update is warranted
+    based on the minimum number of new topo packets required to trigger an update
+
+    Provides a dataframe -> "df_all_topo_packets" which provides all topo logs to date
+    use this df to calculate your metrics
+
+    """
+    global topo_df, topo_dict,timeframe_param,timeframe_dls, topo_dict
+    while True:
         if is_updating_topo.is_set():
             #print("TopoEventScheduler: skip calc as db update is active")
             time.sleep(10)
@@ -312,7 +304,7 @@ def topology_event_scheduler():
         except Exception as ex:
             print(f"Error in topology df: {ex}")
         # Notify threads metric calculation is complete (db updates can resume)
-        print(f"Topology calculated with this param {sessionid}")
+        #print(f"Topology calculated with this param {sessionid}")
         topo_dict['user_data'] = {"sessionid": sessionid}
         is_calculating_topo.clear()
 
@@ -451,6 +443,7 @@ async def read_network_df(metric_owner):
     except Exception as e:
         print(f"API node data call has exception {e}")
         response_df = {}
+        raise HTTPException(status_code=404, detail="Item not found")
         
     return response_df
 
@@ -473,6 +466,7 @@ async def read_node_df(metric_owner, node: int = 1):
         except Exception as e:
             print(f"API node data call has exception {e}")
             response_df = {}
+            raise HTTPException(status_code=404, detail="Item not found")
     
     return response_df
 
@@ -495,6 +489,7 @@ async def read_topo_db(q: Union[str, None] = None):
     except Exception as e:
         print(f"API topodata has exception {e}")
         res = []
+        raise HTTPException(status_code=404, detail="Item not found")
 
     if len(res) == 0:
         print("No topology data")
@@ -523,13 +518,13 @@ async def post_session_data(data: SessionID):
     except:
         sessionid_dt = client.find_session_id(collection_name="topology")[-1]  
     if sessionid_dt != sessionid:
-        print(f"All data frame are reset because difference in {sessionid_dt} and {sessionid} ")
+        print(f"All data frames are reset because mismatch between POST session: {sessionid_dt} and AAS session: {sessionid}")
         meta_stream.delete_df()
         packet_stream.delete_df()
         topo_stream.delete_df()
         topo_dict.clear(); network_df.clear(); node_df.clear()
         last_meta_id = None
-        last_packet_id = {}
+        last_packet_id.clear()
         last_topo_id = None
         sessionid = sessionid_dt  
         if sessionid_dt != '':

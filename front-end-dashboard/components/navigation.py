@@ -1,6 +1,6 @@
 import dash_bootstrap_components as dbc
 from dash import html, Output, Input, MATCH, State
-from utils.data_connectors import get_topo_data, get_session_data, send_sessionid
+from utils.data_connectors import get_topo_data, send_sessionid
 from datetime import datetime, timedelta
 import dash
 
@@ -148,7 +148,7 @@ def update_refresh_loading_output_node(n_clicks, usrtz):
     #print(n_clicks)
     #print("usr timezone", usrtz)
     data_update = datetime.utcnow() - timedelta(minutes=usrtz)
-    data_update = data_update.strftime("%Y-%m-%d %H:%M:%S")
+    data_update = data_update.strftime("%d-%m-%Y %H:%M:%S")
     
     loading_out = [html.Div(f"Dashboard Last Updated: {data_update}"), ]
     return loading_out
@@ -180,8 +180,7 @@ def update_experiment_selected(btn, data, usrtz):
     print(f"Update session {res} to AAS") 
     experiment_dt = datetime.fromisoformat(res)
     experiment_dt = experiment_dt - timedelta(minutes=usrtz)
-    
-    return "Experiment time: " + experiment_dt.strftime("%Y-%m-%d %H:%M:%S")
+    return "Experiment time: " + experiment_dt.strftime("%d-%m-%Y %H:%M:%S") 
      
 
 

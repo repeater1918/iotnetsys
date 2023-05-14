@@ -13,7 +13,7 @@ def calculate_energy_cons_metrics(df: pd.DataFrame) -> pd.DataFrame:
     """
     energy_cons_metrics = df.loc[df['sub_type'] == 'duty'].drop('_id', axis=1).copy()
     #energy_cons_ntwk_metrics = energy_cons_metrics.groupby('sub_type').agg({'sub_type_value3': sum, 'node':'count'})
-    energy_cons_ntwk_metrics= {'energy_cons': round(energy_cons_metrics["sub_type_value3"].mean(),0)}
+    energy_cons_ntwk_metrics= [{'energy_cons': round(energy_cons_metrics["sub_type_value3"].mean(),0)}]
     node_energy_metrics = calculate_energy_cons_node_metrics(energy_cons_metrics)
     return energy_cons_ntwk_metrics, node_energy_metrics
 

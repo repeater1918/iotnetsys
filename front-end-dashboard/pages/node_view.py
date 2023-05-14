@@ -8,6 +8,7 @@ from views.graph_queue_loss import get_queueloss_graph
 from views.graph_hop_count import get_hop_cnt_graph
 from components.navigation import nav_drawer, top_page_heading
 from views.graph_pc_node_metric import get_parent_chg_graph
+from views.graph_duty_cycle import get_duty_cycle_graph
 from views.graph_e2e import get_e2e_graph
 from views.graph_deadloss import get_deadloss_graph
 
@@ -35,7 +36,7 @@ def layout(nodeid):
         dbc.Row(
             [
                 dbc.Col(get_pdr_graph(is_init=True, node_id=nodeid), md=4, style={"margin-top": "16px"}),
-                dbc.Col(graph_duty_cycle, md=4, style={"margin-top": "16px"}),   
+                dbc.Col(get_duty_cycle_graph(is_init=True, node_id=nodeid), md=4, style={"margin-top": "16px"}),   
                 dbc.Col(get_e2e_graph(is_init=True, node_id=nodeid), md=4, style={"margin-top": "16px"}),
                 dbc.Col(get_icmp_graph(is_init=True, node_id=nodeid), md=4, style={"margin-top": "16px"}),
                 dbc.Col(get_deadloss_graph(is_init=True, node_id=nodeid), md=4, style={"margin-top": "16px"}),

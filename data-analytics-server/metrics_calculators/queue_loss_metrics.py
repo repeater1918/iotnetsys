@@ -13,6 +13,7 @@ def calculate_queue_loss(df: pd.DataFrame) -> Tuple[dict, dict]:
     #limit to dropped packets
     queueloss_network = df.loc[df['sub_type'] == 'drop'].drop('_id', axis=1).copy()
     queueloss_network['env_timestamp'] = queueloss_network['env_timestamp'].dt.strftime("%H:%M:%S").astype(str) 
+    queueloss_network = queueloss_network.sort_values(by='node', ascending=True)
     queueloss_network_dict = queueloss_network.to_dict('records')
     queueloss_node_dict = calc_queue_loss_nodes(queueloss_network)
     

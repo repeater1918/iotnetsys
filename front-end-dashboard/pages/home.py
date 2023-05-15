@@ -4,7 +4,7 @@ import plotly.express as px
 from dash import  dcc, html
 
 import dash_bootstrap_components as dbc
-from views.graph_duty_cycle import graph_duty_cycle
+from views.graph_duty_cycle import get_duty_cycle_graph
 from views.network_topology import topo_graph
 from views.graph_icmp_packets import get_icmp_graph
 from views.graph_pdr import get_pdr_graph
@@ -43,7 +43,7 @@ layout = html.Div(
             ]),
         dbc.Row([
                     dbc.Col(topo_graph, md=8, style={"margin-top": "16px"}),
-                    dbc.Col(graph_duty_cycle, md=4, style={"margin-top": "16px"}),
+                    dbc.Col(get_duty_cycle_graph(is_init=True), md=4, style={"margin-top": "16px"}),
                 ]) 
     ])]      
    

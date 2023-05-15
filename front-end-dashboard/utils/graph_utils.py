@@ -10,6 +10,7 @@ from views.graph_received_packets import get_receivedpackets_graph
 from views.graph_hop_count import get_hop_cnt_graph
 from views.graph_e2e import get_e2e_graph
 from views.graph_deadloss import get_deadloss_graph
+from views.graph_duty_cycle import get_duty_cycle_graph
 from views.network_topology import default_stylesheet
 import pandas as pd
 import dash
@@ -55,28 +56,11 @@ def get_common_graph(api_data, nodeid=None):
         deadloss_graph = get_deadloss_graph(df_deadloss, node_id=nodeid)
         
     # for duty
-    df_energy = pd.DataFrame(api_data['energy_cons_metric'])
+    df_energy = pd.DataFrame(api_data['energy_cons_metric'], index=[0])    
     if len(api_data['energy_cons_metric']) == 0:
-        graph_duty_cycle = px.bar(title="Energy Consumption")
+        graph_duty_cycle = get_duty_cycle_graph(is_empty=True, node_id=nodeid)
     else:
-        graph_duty_cycle = go.Figure(
-                go.Indicator(
-                    mode="gauge+number+delta",
-                    value= 100 - df_energy.loc[0,"energy_cons"],
-                    
-                    domain={"x": [0, 1], "y": [0, 1]},
-                    delta={"reference": 100},
-                    title={"text": "Energy Consumption"},
-                    gauge={
-                        "axis": {"range": [None, 100]},
-                        "steps": [
-                            {"range": [0, 400], "color": "gray"},
-                        ],
-                    },
-                ),
-
-                layout={"plot_bgcolor": "#222", "paper_bgcolor": "#222"},
-            )        
+        graph_duty_cycle = get_duty_cycle_graph(df_energy, node_id=nodeid)
       
     return (queueloss_graph, e2e_graph, deadloss_graph, graph_duty_cycle, pdr_graph, icmp_graph,)
 
@@ -91,6 +75,7 @@ Output({"type":"graph-pdr", "page": MATCH}, "figure"),
 Output({"type":"graph-icmp", "page": MATCH}, "figure"),
 [Input('url', 'pathname'), Input('refresh-dash', 'n_clicks')])
 def update_common_graphs(pathname, n_clicks):
+    """Callback to update common graphs in both network & node"""
     #print("Common graph is updating ")
     
     if pathname.split('/')[1] == 'node_view':
@@ -104,14 +89,15 @@ def update_common_graphs(pathname, n_clicks):
     else:
         return dash.no_update
     
+
     queueloss_graph, e2e_graph, deadloss_graph, graph_duty_cycle, pdr_graph, icmp_graph = get_common_graph(api_data, nodeid)
-    
     return (queueloss_graph, e2e_graph, deadloss_graph, graph_duty_cycle, pdr_graph, icmp_graph)
 
 
 @app.callback(Output({"type": "graph-receivedpackets", "page": "network"}, "figure"),
 [Input('url', 'pathname'), Input('refresh-dash', 'n_clicks')])
 def update_network_graph(pathname, n_clicks):
+    """Callback to update graphs specific to network view"""
     #print("Network specific graph is updating")
     if pathname != '/':
         return dash.no_update
@@ -132,14 +118,13 @@ def update_network_graph(pathname, n_clicks):
 Output({"type":"graph-pc", "page": "node"}, "figure"),
 [Input('url', 'pathname'), Input('refresh-dash', 'n_clicks')])
 def update_node_graph(pathname, n_clicks):
-    
+    """Callback to update graphs specific to node view"""
+
     if pathname.split('/')[1] != 'node_view':
         return dash.no_update
 
     nodeid = int(pathname.split('/')[-1])
-
     api_data  = get_node_data(nodeid, 'pc_metric')    
-
     topo_api_data = get_topo_data()
 
     df_topo = pd.DataFrame(topo_api_data)
@@ -203,7 +188,7 @@ def topology_update(elements, layout, pathname, n_clicks):
                      Input('topology-graph', 'layout')],
                     [State('topo-toast', "is_open")])
 def displayTapNodeData(data, layout, is_open):
-
+        """Callback to display node info on selected"""
         if data:
             #Node data[0]['id'] selected
             selected_node = data[0]['id']

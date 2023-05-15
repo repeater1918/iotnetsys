@@ -1,8 +1,9 @@
 import numpy as np
 import pandas as pd
 from utils.graphing import bin_label
+from typing import Tuple
 
-def calculate_end_to_end_delay(df: pd.DataFrame, timeframe: int, bins: int, nodeID:int) -> pd.DataFrame:
+def calculate_end_to_end_delay(df: pd.DataFrame, timeframe: int, bins: int) -> Tuple[dict, dict]:
     """ Calculate Network level OR Node levle end-to-end delay based on passed nodeID parameter
 
     Args:
@@ -31,8 +32,26 @@ def calculate_end_to_end_delay(df: pd.DataFrame, timeframe: int, bins: int, node
     
     # filter records based on nodeID
     # -1 means Network level, otherwise, node level
-    if nodeID!=-1: 
-        df_joined=df_joined.loc[df_joined['send_node'] == nodeID]
+    sensor_nodes = [x for x in df_joined['send_node'].unique() if not pd.isnull(x)] 
+    node_metric_dict = {}
+    if len(sensor_nodes) >0: 
+        for node in sensor_nodes:
+            df_joined_node=df_joined.loc[df_joined['send_node'] == node].copy()
+            node_metric_dict[node] = calculate_average_e2e(df_joined_node, bins)
+
+    # calculation depends on bins
+    metric = calculate_average_e2e(df_joined, bins)
+    return metric, node_metric_dict
+
+def calculate_average_e2e(df_joined: pd.DataFrame, bins: int) -> dict:
+    """        
+    Calculate e2e with given number of bins (i.e data points)
+    :param df_joined: Processed panda dataframe to joined send/recv events
+    :param bins: number of bins
+
+    :return metric dictionary
+    
+    """
     # calculation depends on bins
     start_point = df_joined['send_ts'].min()
     bin_size = (df_joined['send_ts'].max() - df_joined['send_ts'].min()) / bins
@@ -43,12 +62,11 @@ def calculate_end_to_end_delay(df: pd.DataFrame, timeframe: int, bins: int, node
     
     metric = df_joined.groupby('bins').agg({'delay': sum, 'unique_id': 'count', 'env_timestamp': max}).rename(columns={'delay': 'total_delay', 'unique_id': 'total_recv_packets'})  
     metric['average_delay'] = metric['total_delay'] / metric['total_recv_packets']
+   
     metric = metric.reset_index()
     # Make time format readable
     metric['env_timestamp'] = metric['env_timestamp'].dt.strftime("%H:%M:%S").astype(str)
     metric['bins'] = metric.reset_index()['bins'].apply(bin_label)
-    
-    return metric
-
-
+    metric = metric.dropna()
+    return metric.to_dict('records')
     

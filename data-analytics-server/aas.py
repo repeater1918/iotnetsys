@@ -143,12 +143,8 @@ def packet_metric_scheduler():
             # Nwe - to calculate end-to-end delay (network level)
             e2e_metric, e2e_node_metric = calculate_end_to_end_delay(copy.deepcopy(df_all_packets), timeframe=timeframe_param*1000, bins=10)
             network_df['e2e_metric'] = e2e_metric + [user_data_dict]
-            
             # Nwe - to calculate end-to-end delay (node level)
             for node,data in e2e_node_metric.items():
-                # e2e_node_metric = calculate_end_to_end_delay(copy.deepcopy(df_all_packets), timeframe=timeframe_param*1000, bins=10,nodeID=node)
-                # e2e_node_metric_dict = e2e_node_metric.to_dict("records")
-                
                 node_df[node]['e2e_metric'] = data + [user_data_dict]
         except Exception as ex:
             print(f'Error in E2E METRIC calc: {ex}')        
@@ -159,8 +155,6 @@ def packet_metric_scheduler():
             network_df['deadloss_metric'] = deadloss_metric+ [user_data_dict]
             # Nwe - to calculate dead loss (node level)
             for node, data in dloss_node_metric.items():
-                # deadloss_node_metric = calculate_dead_loss(copy.deepcopy(df_all_packets), timeframe=timeframe_param*1000,timeframe_deadline=timeframe_dls,bins=10,nodeID=node)
-                # deadloss_node_metric_dict = deadloss_node_metric.to_dict("records")
                 node_df[node]['deadloss_metric'] = data + [user_data_dict]
         except Exception as ex:
             print(f'Error in DEADLINE LOSS METRIC calc: {ex}')        

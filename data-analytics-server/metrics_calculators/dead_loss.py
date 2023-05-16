@@ -53,6 +53,8 @@ def calculate_deadloss_with_bin(df_joined: pd.DataFrame, bins: int) -> dict:
 
     :return metric dictionary
     """
+    if df_joined.empty or df_joined['send_ts'].max() == df_joined['send_ts'].min():
+        return []
     start_point = df_joined['send_ts'].min()
     bin_size = (df_joined['send_ts'].max() - df_joined['send_ts'].min()) / bins
     boundaries = []

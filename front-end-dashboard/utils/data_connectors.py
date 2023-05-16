@@ -5,14 +5,15 @@ AAS_URI = os.environ.get('AAS_URI', "http://127.0.0.1:8000/api/") #AAS supports 
 print(f"AAS_URI -> {AAS_URI}")
 
 global supported_metrics, node_supported_metrics
-supported_metrics = ["pdr_metric","icmp_metric","received_metric", "e2e_metric", "deadloss_metric", "queueloss_metric","energy_cons_metric"]
-node_supported_metrics = [*supported_metrics, "pc_metric"]
+common_supported_metrics = ["pdr_metric","icmp_metric","e2e_metric", "deadloss_metric", "queueloss_metric","energy_cons_metric"]
+node_supported_metrics = [*common_supported_metrics, "pc_metric"]
+network_supported_metrics = [*common_supported_metrics, "received_metric"]
 
 def get_network_data(metric = None):
     """Request API to get network metrics"""
     result_dict = {}
     
-    for v in supported_metrics:
+    for v in network_supported_metrics:
         if metric != None and v != metric: 
             continue
         res = requests.get(AAS_URI+f"networkmetric/{v}")

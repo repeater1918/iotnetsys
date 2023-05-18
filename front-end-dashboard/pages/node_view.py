@@ -36,7 +36,7 @@ def layout(nodeid):
         dbc.Row(
             [
                 dbc.Col(get_pdr_graph(is_init=True, node_id=nodeid), md=4, style={"margin-top": "16px"}),
-                dbc.Col(get_deadloss_graph(is_init=True, node_id=nodeid), md=4, style={"margin-top": "16px"}), 
+                dbc.Col(get_deadloss_graph(is_init=True, node_id=nodeid), md=4, style={"margin-top": "16px"}),                
                 dbc.Col(get_e2e_graph(is_init=True, node_id=nodeid), md=4, style={"margin-top": "16px"}),
                 dbc.Col(get_icmp_graph(is_init=True, node_id=nodeid), md=4, style={"margin-top": "16px"}),
                 dbc.Col(get_duty_cycle_graph(is_init=True, node_id=nodeid), md=4, style={"margin-top": "16px"}),

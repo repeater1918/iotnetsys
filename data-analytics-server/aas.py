@@ -23,6 +23,7 @@ from typing import Union
 from datetime import datetime
 from database.mongodb import Database
 from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException
 from metrics_calculators import (calculate_dead_loss,
                                  calculate_end_to_end_delay,
                                  calculate_energy_cons_metrics,
@@ -153,6 +154,7 @@ def packet_metric_scheduler():
             # Nwe - to calculate dead loss (network level)
             deadloss_metric, dloss_node_metric = calculate_dead_loss(copy.deepcopy(df_all_packets), timeframe=timeframe_param*1000, timeframe_deadline=timeframe_dls, bins=10)
             network_df['deadloss_metric'] = deadloss_metric+ [user_data_dict]
+
             # Nwe - to calculate dead loss (node level)
             for node, data in dloss_node_metric.items():
                 node_df[node]['deadloss_metric'] = data + [user_data_dict]

@@ -3,6 +3,7 @@ import pandas as pd
 from utils.graphing import bin_label
 from typing import Tuple
 
+
 def calculate_dead_loss(df: pd.DataFrame, timeframe: int, timeframe_deadline:int,bins: int) -> Tuple[dict, dict]:
     """ Calculate Network level OR Node levle deadline loss 
     Args:

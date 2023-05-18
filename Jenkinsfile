@@ -29,7 +29,6 @@ pipeline {
                         }
 
                         sh 'cat docker-compose.yaml | envsubst > docker-compose.env.yaml'
-                        sh 'cat docker-compose.env.yaml'
                     }
                 }
 

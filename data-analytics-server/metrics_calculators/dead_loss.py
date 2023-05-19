@@ -3,6 +3,7 @@ import pandas as pd
 from utils.graphing import bin_label
 from typing import Tuple
 
+
 def calculate_dead_loss(df: pd.DataFrame, timeframe: int, timeframe_deadline:int,bins: int) -> Tuple[dict, dict]:
     """ Calculate Network level OR Node levle deadline loss 
     Args:
@@ -53,6 +54,8 @@ def calculate_deadloss_with_bin(df_joined: pd.DataFrame, bins: int) -> dict:
 
     :return metric dictionary
     """
+    if df_joined.empty or df_joined['send_ts'].max() == df_joined['send_ts'].min():
+        return []
     start_point = df_joined['send_ts'].min()
     bin_size = (df_joined['send_ts'].max() - df_joined['send_ts'].min()) / bins
     boundaries = []

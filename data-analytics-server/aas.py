@@ -23,6 +23,7 @@ from typing import Union
 from datetime import datetime
 from database.mongodb import Database
 from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException
 from metrics_calculators import (calculate_dead_loss,
                                  calculate_end_to_end_delay,
                                  calculate_energy_cons_metrics,
@@ -116,12 +117,12 @@ def packet_metric_scheduler():
     while True:
         if is_updating_packet.is_set():
             # print("PcktMetricScheduler: skip calc as db update is active")
-            time.sleep(5)
+            time.sleep(0.1)
             continue
 
         if not packet_stream.is_update_ready:
             # print("PcktMetricScheduler: skip calc not enough new packets")
-            time.sleep(5)
+            time.sleep(.1)
             continue
 
         # Notify threads that metric calculation is in process
@@ -143,12 +144,8 @@ def packet_metric_scheduler():
             # Nwe - to calculate end-to-end delay (network level)
             e2e_metric, e2e_node_metric = calculate_end_to_end_delay(copy.deepcopy(df_all_packets), timeframe=timeframe_param*1000, bins=10)
             network_df['e2e_metric'] = e2e_metric + [user_data_dict]
-            
             # Nwe - to calculate end-to-end delay (node level)
             for node,data in e2e_node_metric.items():
-                # e2e_node_metric = calculate_end_to_end_delay(copy.deepcopy(df_all_packets), timeframe=timeframe_param*1000, bins=10,nodeID=node)
-                # e2e_node_metric_dict = e2e_node_metric.to_dict("records")
-                
                 node_df[node]['e2e_metric'] = data + [user_data_dict]
         except Exception as ex:
             print(f'Error in E2E METRIC calc: {ex}')        
@@ -157,10 +154,9 @@ def packet_metric_scheduler():
             # Nwe - to calculate dead loss (network level)
             deadloss_metric, dloss_node_metric = calculate_dead_loss(copy.deepcopy(df_all_packets), timeframe=timeframe_param*1000, timeframe_deadline=timeframe_dls, bins=10)
             network_df['deadloss_metric'] = deadloss_metric+ [user_data_dict]
+
             # Nwe - to calculate dead loss (node level)
             for node, data in dloss_node_metric.items():
-                # deadloss_node_metric = calculate_dead_loss(copy.deepcopy(df_all_packets), timeframe=timeframe_param*1000,timeframe_deadline=timeframe_dls,bins=10,nodeID=node)
-                # deadloss_node_metric_dict = deadloss_node_metric.to_dict("records")
                 node_df[node]['deadloss_metric'] = data + [user_data_dict]
         except Exception as ex:
             print(f'Error in DEADLINE LOSS METRIC calc: {ex}')        
@@ -183,7 +179,7 @@ def packet_metric_scheduler():
         # Notify threads metric calculation is complete (db updates can resume)
         is_calculating_packet.clear()
 
-        time.sleep(2) 
+        time.sleep(.1) 
 
 
 def meta_metric_scheduler():
@@ -203,12 +199,12 @@ def meta_metric_scheduler():
     while True:
         if is_updating_meta.is_set():
             # print("MetaMetricScheduler: skip calc as db update is active")
-            time.sleep(10)
+            time.sleep(0.5)
             continue
 
         if not meta_stream.is_update_ready:
             # print("MetaMetricScheduler: skip calc not enough new packets")
-            time.sleep(10)
+            time.sleep(0.5)
             continue
 
         # Notify threads that metric calculation is in process
@@ -272,7 +268,7 @@ def meta_metric_scheduler():
         # Notify threads metric calculation is complete (db updates can resume)
         is_calculating_meta.clear()
 
-        time.sleep(5) 
+        time.sleep(1) 
 
 def topology_event_scheduler():
     """
@@ -287,12 +283,12 @@ def topology_event_scheduler():
     while True:
         if is_updating_topo.is_set():
             #print("TopoEventScheduler: skip calc as db update is active")
-            time.sleep(10)
+            time.sleep(0.5)
             continue
 
         if not topo_stream.is_update_ready:
             #print("TopoEventScheduler: skip calc not enough new packets")
-            time.sleep(10)
+            time.sleep(0.5)
             continue
         
         # Notify threads that metric calculation is in process
@@ -310,7 +306,7 @@ def topology_event_scheduler():
         topo_dict['user_data'] = {"sessionid": sessionid}
         is_calculating_topo.clear()
 
-        time.sleep(5) 
+        time.sleep(1) 
 
 
 
@@ -319,7 +315,7 @@ def watch_packetlogs() -> None:
     while True:
         # if the metric calculation function (watch_metrics) is active, pause data update
         while is_calculating_packet.is_set():
-            time.sleep(10)
+            time.sleep(0.2)
 
         global last_packet_id, packet_stream, sessionid
 
@@ -331,7 +327,7 @@ def watch_packetlogs() -> None:
         for name in node_collection_names:
 
             data, id_max= client.find_by_pagination(
-                collection_name=name, last_id=last_packet_id.get(name), page_size=500, sessionid=sessionid
+                collection_name=name, last_id=last_packet_id.get(name), page_size=1000, sessionid=sessionid
             )
             data_list.append(data)
             if id_max != None:
@@ -344,7 +340,7 @@ def watch_packetlogs() -> None:
         if len(data_list) == 0:
             # print("WatchPcktLogs: no new packet logs in DB, putting watcher to sleep")
             is_updating_packet.clear()
-            time.sleep(30)
+            time.sleep(1)
             continue
 
         # Unwrap list of list node resuls
@@ -356,7 +352,7 @@ def watch_packetlogs() -> None:
         # print(
         #     f"WatchPcktLogs: stream size = {len(packet_stream.stream)}, all logs = {len(packet_stream.df_packet_hist)}, update ready: {packet_stream.is_update_ready}"
         # )
-        time.sleep(5)
+        time.sleep(0.3)
 
 
 def watch_metalogs() -> None:
@@ -364,7 +360,7 @@ def watch_metalogs() -> None:
     while True:
         # if the metric calculation function (watch_metrics) is active, pause data update
         while is_calculating_meta.is_set():
-            time.sleep(15)
+            time.sleep(0.5)
 
         global last_meta_id, meta_stream, sessionid
 
@@ -379,7 +375,7 @@ def watch_metalogs() -> None:
         if data is None:
             # print("WatchMetaLogs: no new meta logs in DB, putting watcher to sleep")
             is_updating_meta.clear()
-            time.sleep(30)
+            time.sleep(1)
             continue
 
         # Update the meta stream with new data
@@ -392,7 +388,7 @@ def watch_metalogs() -> None:
         # print(
         #     f"WatchMetaLogs: stream size = {len(meta_stream.stream)}, all logs = {len(meta_stream.df_packet_hist)}, update ready: {meta_stream.is_update_ready}"
         # )
-        time.sleep(15)
+        time.sleep(0.5)
 
 
 def watch_topology() -> None:
@@ -400,7 +396,7 @@ def watch_topology() -> None:
     while True:
 
         while is_calculating_topo.is_set():
-            time.sleep(15)
+            time.sleep(0.5)
 
         global last_topo_id, topo_stream
         is_updating_topo.set()
@@ -417,7 +413,7 @@ def watch_topology() -> None:
         if data is None:
             #print("WatchTopoLogs: no new topo logs in DB, putting watcher to sleep")
             is_updating_topo.clear()
-            time.sleep(30)
+            time.sleep(1)
             continue
 
         # Update the meta stream with new data
@@ -430,7 +426,7 @@ def watch_topology() -> None:
         # print(
         #     f"WatchTopoLogs: stream size = {len(meta_stream.stream)}, all logs = {len(meta_stream.df_packet_hist)}, update ready: {meta_stream.is_update_ready}"
         # )
-        time.sleep(20)
+        time.sleep(0.5)
 
 
 @app.get("/api/networkmetric/{metric_owner}")
@@ -443,6 +439,7 @@ async def read_network_df(metric_owner):
             response_df = network_df[metric_owner][:-1]
         else:
             raise Exception("Calculated dataframe is not using current UI timeframe & dl")
+        
     except Exception as e:
         print(f"API node data call has exception {e}")
         response_df = {}
@@ -465,7 +462,8 @@ async def read_node_df(metric_owner, node: int = 1):
                 response_df = node_df[node][metric_owner][:-1]
                 return response_df
             else:
-                raise Exception("Calculated dataframe is not using current UI timeframe & dl")
+               raise Exception("Calculated dataframe is not using current UI timeframe & dl")
+
         except Exception as e:
             print(f"API node data call has exception {e}")
             response_df = {}
@@ -534,7 +532,8 @@ async def post_session_data(data: SessionID):
            sessionid = copy.deepcopy(sessionid_dt)
         else:
             sessionid = client.find_session_id(collection_name="topology")[-1]   
-        
+        time.sleep(2) #block the dashboard loading output for 2s to wait metric to calculate 
+
     return sessionid
 
 

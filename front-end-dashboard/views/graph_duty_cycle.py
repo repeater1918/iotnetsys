@@ -12,7 +12,7 @@ def get_duty_cycle_graph(data = None, is_init=False, node_id=False, is_empty=Fal
     if is_init:
         # first initialization of the graph, just need empty placeholder and identify the object in html tree
         graph_id = {"type": "graph-duty-cycle", "page": "node" if node_id else "network"} 
-        title = f"Energy consumption value - Node: {node_id}" if node_id else "Energy Consumption"
+        title = f"Energy value - Node: {node_id}" if node_id else "Average Energy Value in Network"
         duty_cycle_graph = _get_place_holder()
 
         return html.Div(

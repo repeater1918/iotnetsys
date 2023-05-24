@@ -182,7 +182,3 @@ def update_experiment_selected(btn, data, usrtz):
     experiment_dt = experiment_dt - timedelta(minutes=usrtz)
     return "Experiment time: " + experiment_dt.strftime("%d-%m-%Y %H:%M:%S") 
      
-
-
-
-

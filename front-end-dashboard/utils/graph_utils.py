@@ -19,7 +19,6 @@ from dash import html
 import dash_bootstrap_components as dbc
 from maindash import app
 
-
 def get_common_graph(api_data, nodeid=None):    
     """Generate the graphs use in both network & node pages: pdr, icmp, queueloss, e2e, deadloss, duty-cycle"""
     
@@ -64,7 +63,6 @@ def get_common_graph(api_data, nodeid=None):
       
     return (queueloss_graph, e2e_graph, deadloss_graph, graph_duty_cycle, pdr_graph, icmp_graph,)
 
-
 #Callbacks for above graph
 @app.callback(
 Output({"type": "graph-queueloss", "page": MATCH}, "figure"),
@@ -89,10 +87,8 @@ def update_common_graphs(pathname, n_clicks):
     else:
         return dash.no_update
     
-
     queueloss_graph, e2e_graph, deadloss_graph, graph_duty_cycle, pdr_graph, icmp_graph = get_common_graph(api_data, nodeid)
     return (queueloss_graph, e2e_graph, deadloss_graph, graph_duty_cycle, pdr_graph, icmp_graph)
-
 
 @app.callback(Output({"type": "graph-receivedpackets", "page": "network"}, "figure"),
 [Input('url', 'pathname'), Input('refresh-dash', 'n_clicks')])
@@ -112,7 +108,6 @@ def update_network_graph(pathname, n_clicks):
         received_graph = get_receivedpackets_graph(df_received)
 
     return received_graph
-
 
 @app.callback(Output({"type":"graph-hopcount", "page": "node"}, "figure"),
 Output({"type":"graph-pc", "page": "node"}, "figure"),
@@ -143,15 +138,14 @@ def update_node_graph(pathname, n_clicks):
 
     return (hopcount_graph, pc_node_graph)
 
-
 @app.callback(
          Output("topology-graph", 'elements'),
          Output('topology-graph','layout'),
         [Input('topology-graph', 'elements'),
          Input('topology-graph', 'layout'),
          Input('url', 'pathname'), Input('refresh-dash', 'n_clicks')]
-        
 )
+
 def topology_update(elements, layout, pathname, n_clicks):
     """Callback to extract topology and draw"""
 
@@ -177,8 +171,6 @@ def topology_update(elements, layout, pathname, n_clicks):
     layout['roots'] = '#'+',#'.join(edge_servers)   
      
     return edges+nodes, layout
-
-
 
 @app.callback(Output('topology-graph', 'stylesheet'),
                     Output('topo-toast', "is_open"),
@@ -207,7 +199,6 @@ def displayTapNodeData(data, layout, is_open):
                 toast_child.append(dbc.Button("Go to node view", size="sm mt-2", href=f"/node_view/{selected_node}"))
             else:
                  toast_child = [html.P("I'm a server", className="mb-0"),]
-
             
         else: 
             #De-select node
@@ -217,4 +208,3 @@ def displayTapNodeData(data, layout, is_open):
             new_styles = []
 
         return default_stylesheet + new_styles, is_open, toast_hdr, toast_child
-

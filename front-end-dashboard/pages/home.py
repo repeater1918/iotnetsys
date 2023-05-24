@@ -14,7 +14,6 @@ from views.graph_e2e import get_e2e_graph
 from views.graph_deadloss import get_deadloss_graph
 from components.navigation import nav_drawer, top_page_heading
 
-
 dash.register_page(__name__, path="/")
 
 graph_duty_cycle = dcc.Graph(id={"type": "graph-duty-cycle", "page": "network"})
@@ -37,8 +36,7 @@ layout = html.Div(
                 dbc.Col(get_e2e_graph(is_init=True), md=4, style={"margin-top": "16px"}),
                 dbc.Col(get_icmp_graph(is_init=True), md=4, style={"margin-top": "16px"}),
                 dbc.Col(get_deadloss_graph(is_init=True), md=4, style={"margin-top": "16px"}),
-                dbc.Col(get_queueloss_graph(is_init=True), md=4, style={"margin-top": "16px"}),
-                
+                dbc.Col(get_queueloss_graph(is_init=True), md=4, style={"margin-top": "16px"}), 
 
             ]),
         dbc.Row([
@@ -46,5 +44,4 @@ layout = html.Div(
                     dbc.Col(get_duty_cycle_graph(is_init=True), md=4, style={"margin-top": "16px"}),
                 ]) 
     ])]      
-   
 )

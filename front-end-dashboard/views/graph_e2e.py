@@ -34,7 +34,7 @@ def get_e2e_graph(data = None, is_init=False, node_id=False, is_empty=False):
             data,
             x="env_timestamp",
             y="average_delay",
-            labels={"env_timestamp": "Time Invervals", "average_delay": "Milli-Seconds"},
+            labels={"env_timestamp": "Time Invervals", "average_delay": "Delay (ms)"},
         )
         e2e_graph = _style_graph(e2e_graph, data)
 
@@ -47,7 +47,7 @@ def get_e2e_graph(data = None, is_init=False, node_id=False, is_empty=False):
             x="env_timestamp",
             y="average_delay",
             markers=True,
-            labels={"env_timestamp": "Time Invervals", "average_delay": "Milli-Seconds"},
+            labels={"env_timestamp": "Time Invervals", "average_delay": "Delay (ms)"},
         )
     e2e_graph = _style_graph(e2e_graph, data)
 

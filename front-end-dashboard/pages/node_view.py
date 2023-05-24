@@ -12,13 +12,9 @@ from views.graph_duty_cycle import get_duty_cycle_graph
 from views.graph_e2e import get_e2e_graph
 from views.graph_deadloss import get_deadloss_graph
 
-
 dash.register_page(__name__, path_template='/node_view/<nodeid>')
 
-
 def layout(nodeid):
-    
-    graph_duty_cycle = dcc.Graph(id={"type": "graph-duty-cycle", "page": "node"} )
 
     return html.Div(
     className="wrapper",
@@ -43,9 +39,6 @@ def layout(nodeid):
                 dbc.Col(get_queueloss_graph(is_init=True, node_id=nodeid), md=4, style={"margin-top": "16px"}),
                 dbc.Col(get_hop_cnt_graph(is_init=True, node_id=nodeid), md=6, style={"margin-top": "16px"}),  
                 dbc.Col(get_parent_chg_graph(is_init=True, node_id=nodeid), md=6, style={"margin-top": "16px"}),
-                
             ]),
-       
-        
     ])]
 )

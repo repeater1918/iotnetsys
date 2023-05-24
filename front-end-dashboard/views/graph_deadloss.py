@@ -34,7 +34,7 @@ def get_deadloss_graph(data = None, is_init=False, node_id=False, is_empty=False
             data,
             x="env_timestamp",
             y="deadloss_percent",
-            labels={"env_timestamp": "Time Invervals", "deadloss_percent": "Deadline Loss Packets %"},
+            labels={"env_timestamp": "Time Invervals", "deadloss_percent": "Deadline Loss Packets (%)"},
         )
         deadloss_graph = _style_graph(deadloss_graph, data)
 
@@ -46,7 +46,7 @@ def get_deadloss_graph(data = None, is_init=False, node_id=False, is_empty=False
             data,
             x="env_timestamp",
             y="deadloss_percent",
-            labels={"env_timestamp": "Time Invervals", "deadloss_percent": "Deadline Loss Packets %"},
+            labels={"env_timestamp": "Time Invervals", "deadloss_percent": "Deadline Loss Packets (%)"},
         )
     deadloss_graph = _style_graph(deadloss_graph, data)
 

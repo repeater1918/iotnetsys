@@ -31,7 +31,7 @@ def get_duty_cycle_graph(data = None, is_init=False, node_id=False, is_empty=Fal
         #  data is available and a node type graph is required, render graph for a node view       
         duty_cycle_graph = go.Figure(
                 go.Indicator(
-                    mode="gauge+number+delta",
+                    mode="gauge+number",
                     value= data.loc[0,"energy_cons"],                    
                     domain={"x": [0, 1], "y": [0, 1]},
                     delta={"reference": 100},
@@ -53,7 +53,7 @@ def get_duty_cycle_graph(data = None, is_init=False, node_id=False, is_empty=Fal
     #  data is available and a node type graph is required, render graph for a node view
     duty_cycle_graph = go.Figure(
                 go.Indicator(
-                    mode="gauge+number+delta",
+                    mode="gauge+number",
                     value= data.loc[0,"energy_cons"],
                     
                     domain={"x": [0, 1], "y": [0, 1]},

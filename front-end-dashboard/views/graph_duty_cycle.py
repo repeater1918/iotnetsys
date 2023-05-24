@@ -12,7 +12,7 @@ def get_duty_cycle_graph(data = None, is_init=False, node_id=False, is_empty=Fal
     if is_init:
         # first initialization of the graph, just need empty placeholder and identify the object in html tree
         graph_id = {"type": "graph-duty-cycle", "page": "node" if node_id else "network"} 
-        title = f"Energy value - Node: {node_id}" if node_id else "Average Energy Value in Network"
+        title = f"Energy consumption - Node: {node_id}" if node_id else "Average Energy Consumption"
         duty_cycle_graph = _get_place_holder()
 
         return html.Div(
@@ -32,7 +32,7 @@ def get_duty_cycle_graph(data = None, is_init=False, node_id=False, is_empty=Fal
         duty_cycle_graph = go.Figure(
                 go.Indicator(
                     mode="gauge+number+delta",
-                    value= 100 - data.loc[0,"energy_cons"],                    
+                    value= data.loc[0,"energy_cons"],                    
                     domain={"x": [0, 1], "y": [0, 1]},
                     delta={"reference": 100},
                     gauge={
@@ -54,7 +54,7 @@ def get_duty_cycle_graph(data = None, is_init=False, node_id=False, is_empty=Fal
     duty_cycle_graph = go.Figure(
                 go.Indicator(
                     mode="gauge+number+delta",
-                    value= 100 - data.loc[0,"energy_cons"],
+                    value= data.loc[0,"energy_cons"],
                     
                     domain={"x": [0, 1], "y": [0, 1]},
                     delta={"reference": 100},
@@ -75,6 +75,3 @@ def get_duty_cycle_graph(data = None, is_init=False, node_id=False, is_empty=Fal
 def _get_place_holder():
     fig = px.bar()
     return fig
-
-
-

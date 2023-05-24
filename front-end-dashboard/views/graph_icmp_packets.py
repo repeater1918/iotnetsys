@@ -31,7 +31,7 @@ def get_icmp_graph(data = None, is_init=False, node_id=False, is_empty=False):
             data,
             x="env_timestamp",
             y="sub_type_value",
-            labels={"env_timestamp": "Time", "sub_type_value": "Total ICMP Packets"},
+            labels={"env_timestamp": "Time", "sub_type_value": "Number of ICMP Packets"},
             )
         
         icmp_graph = _style_graph(icmp_graph)
@@ -44,7 +44,7 @@ def get_icmp_graph(data = None, is_init=False, node_id=False, is_empty=False):
         data,
         x="node",
         y="sub_type_value",
-        labels={"node": "Node ID", "sub_type_value": "Total ICMP Packets"},
+        labels={"node": "Node ID", "sub_type_value": "Number of ICMP Packets"},
     )
     icmp_graph = _style_graph(icmp_graph)
 

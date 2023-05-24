@@ -30,7 +30,7 @@ def get_receivedpackets_graph(data = None, is_init=False, is_empty=False):
             x="env_timestamp",
             y="total_packets",
             markers=True,
-            labels={"env_timestamp": "Time Invervals", "total_packets": "Number of packets"},
+            labels={"env_timestamp": "Time Invervals", "total_packets": "Number of received packets"},
         )
     
     receivedpackets_graph = _style_graph(receivedpackets_graph, data)

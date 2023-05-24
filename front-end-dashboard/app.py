@@ -57,7 +57,7 @@ app.layout = html.Div(
 )
 def set_timeframe(value, btn_refresh):
     """Callback to send timeframe selected to AAS"""
-    print(f"Timeframe set {value}")
+    #print(f"Timeframe set {value}")
     if value == None:
         send_timeframe(60000) #default 1 min
     else:

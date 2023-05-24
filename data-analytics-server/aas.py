@@ -91,7 +91,7 @@ async def root(data: Timeframe):
     timeframe_param = data.timeframe
     packet_stream.is_update_ready = True    
     meta_stream.is_update_ready = True
-    print(data.timeframe)
+    print(f"Set timeframe {data.timeframe}")
 
 @app.post("/api/timeframe_dls")
 async def root(data: Timeframe):
@@ -99,7 +99,7 @@ async def root(data: Timeframe):
     timeframe_dls = data.timeframe
     packet_stream.is_update_ready = True
     meta_stream.is_update_ready = True
-    print(data.timeframe)
+    print(f"Set deadline loss {data.timeframe}")
 
 
 def packet_metric_scheduler():

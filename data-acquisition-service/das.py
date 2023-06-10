@@ -14,7 +14,7 @@ TODO:
 
 """
 from pathlib import Path
-
+import sys
 from dotenv import load_dotenv
 
 dotenv_path = Path(Path(__file__).parent.resolve(), "../.envs/mongodb.env")
@@ -29,18 +29,22 @@ from database.mongodb import Database
 from models import parse_incoming, PacketLog, TopologyLog, MetaLog
 from utils import get_collection_name, delete_all_collections
 
-dotenv_path = Path(Path(__file__).parent.resolve(), "../.envs/mongodb.env")
-load_dotenv(dotenv_path=dotenv_path)
-
-# Connect to local mongo instance and define starting db = iotnetsys
+# Connect to local mongo instance and define starting db
 client = Database(database_name="iotnetsys")
 
-# Instruct python to run Omid's script and pipe the results to this program
-target_script = ("emitter.sh")
-#Windows os will use below script
-if os.name == 'nt':
-    target_script = ("emitter.bat")
+# Resolve IOT runnable path
+if os.getenv('DEMO_STATE') == True:
+    target_script = ("emitter.bat") if os.name == 'nt' else ("emitter.sh")
+elif len(sys.argv) < 2:
+    print("Please provide the path to the shell or batch runnable for IOT procedure")
+    sys.exit(1)
+elif len(sys.argv) > 2:
+    print(f"Data service expected one argument 'path_to_runnable' but {len(sys.argv) - 1} were provided")
+    sys.exit(1)
+else:
+    target_script = (sys.argv[1])
 
+# Execute target runnable
 proc = subprocess.Popen(
     [target_script],
     shell=True,

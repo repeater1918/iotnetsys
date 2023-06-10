@@ -1,5 +1,6 @@
 [![Build Status](https://jenkins.iotnetsys.net/buildStatus/icon?job=iotnetsys-cicd)](https://jenkins.iotnetsys.net/job/iotnetsys-cicd/)
-[![Python Version](https://img.shields.io/badge/Python-3.9%2C%203.10%2C%203.11-blue)](https://www.python.org/)
+![Python Version](https://img.shields.io/badge/Python-3.10%20|%203.11-blue.svg)
+
 <a name="readme-top"></a>
 
 ## Overview

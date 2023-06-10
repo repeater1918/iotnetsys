@@ -29,7 +29,7 @@ navbar = dbc.Navbar(
 
                         dbc.Col(dbc.Button(id='experiment-nav-btn', children=[
                             html.I(className="bi refresh-btn"),
-                            'Archived Experiements'], href='/sessionlist'),
+                            'Archived Experiments'], href='/sessionlist'),
                             width="auto"
                         ),
                     ],
